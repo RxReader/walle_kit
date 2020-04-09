@@ -1,0 +1,25 @@
+# 渠道配置列表
+# 默认
+official
+# 奇虎360
+qihu360
+# 百度
+baidu
+# 小米
+xiaomi
+# 腾讯
+tencent
+# 阿里云
+aliyun
+# 华为
+huawei
+# Oppo
+oppo
+# Vivo
+vivo
+# 三星
+# samsung
+# Google
+# google
+# 抖音
+douyin

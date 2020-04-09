@@ -1,0 +1,489 @@
+//
+//使用方法
+//
+//apply from: 'walle.gradle'
+//
+//android {
+//    productFlavors {
+//        prod {...}
+//    }
+//
+//    walleConfigs {
+//        prod {
+//            enabled = true
+//
+////            // https://github.com/v7lin/walle-docker
+////            jarFile = file('script/walle-cli-all.jar') // 默认：file('script/walle-cli-all.jar')
+//
+//            qihoo360 {
+////                // https://github.com/v7lin/qihoo360-jiagu-docker
+////                jiaguJarFile = file('script/jiagu/jiagu.jar') // 默认：file('script/jiagu/jiagu.jar')
+//
+//                account = 'xxx'
+//                password = 'xxx'
+//                channelId = 'qihu360'
+//            }
+//
+//            tencent {
+////                // https://github.com/v7lin/tencentcloud-legu
+////                leguJarFile = file('script/legu-all.jar') // 默认：file('script/legu-all.jar')
+//
+//                secretId = 'xxx'
+//                secretKey = 'xxx'
+////                region = 'ap-guangzhou' // 可选：'ap-guangzhou'、'ap-shanghai'，默认：'ap-guangzhou'
+//                channelId = 'tencent'
+//            }
+//
+//            outputDir = file("${project.buildDir}/outputs/apk/${flavorName}/${buildType}/walle") // 默认：file("${project.buildDir}/outputs/apk/${flavorName}/${buildType}/walle")
+//            fileNameFormat = '${appName}-${buildType}-${channelId}.apk' // 默认：'${appName}-${buildType}-${channelId}.apk'
+//            channelFile = file('channel')
+//        }
+//    }
+//}
+//
+//walle {
+//    enabled = false
+//}
+//
+
+import groovy.text.SimpleTemplateEngine
+
+buildscript {
+    repositories {
+        google()
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.5.2'
+    }
+}
+
+android {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+class Qihoo360 {
+    File jiaguJarFile
+    String account
+    String password
+    String channelId
+
+    void validate(String variant) {
+        if (account == null || account.empty) {
+            throw new IllegalStateException("Qihoo360 account is empty for variant '$variant'")
+        }
+        if (password == null || password.empty) {
+            throw new IllegalStateException("Qihoo360 password is empty for variant '$variant'")
+        }
+        if (channelId == null || channelId.empty) {
+            throw new IllegalStateException("Qihoo360 channelId is empty for variant '$variant'")
+        }
+    }
+}
+
+class Tencent {
+    File leguJarFile
+    String secretId
+    String secretKey
+    String region
+    String channelId
+
+    void validate(String variant) {
+        if (secretId == null || secretId.empty) {
+            throw new IllegalStateException("Tencent secretId is empty for variant '$variant'")
+        }
+        if (secretKey == null || secretKey.empty) {
+            throw new IllegalStateException("Tencent secretKey is empty for variant '$variant'")
+        }
+        if (channelId == null || channelId.empty) {
+            throw new IllegalStateException("Tencent channelId is empty for variant '$variant'")
+        }
+    }
+}
+
+class Walle {
+    final String name
+    Boolean enabled
+    File jarFile
+    Qihoo360 qihoo360
+    Tencent tencent
+    File outputDir
+    String fileNameFormat
+    File channelFile
+
+    Walle(String name = 'default') {
+        this.name = name
+    }
+
+    void qihoo360(Closure closure){
+        qihoo360 = new Qihoo360()
+        closure.delegate = qihoo360
+        closure()
+    }
+
+    void tencent(Closure closure){
+        tencent = new Tencent()
+        closure.delegate = tencent
+        closure()
+    }
+
+    // ---
+
+    void validate() {
+        if (enabled == null || !enabled.booleanValue()) {
+            return
+        }
+        if (channelFile == null) {
+            throw new IllegalStateException("walle channel file is null for variant '$name'")
+        }
+        qihoo360?.validate(name)
+        tencent?.validate(name)
+    }
+
+    Walle mergeWith(Walle other) {
+        if (other == null) {
+            return this
+        }
+        def mergeWalle = new Walle(name == 'default' ? other.name : (other.name == 'default' ? name : "$name${other.name.capitalize()}"))
+        mergeWalle.enabled = other.enabled != null ? other.enabled : enabled
+        mergeWalle.jarFile = other.jarFile ?: jarFile
+        mergeWalle.qihoo360 = other.qihoo360 ?: qihoo360
+        mergeWalle.tencent = other.tencent ?: tencent
+        mergeWalle.outputDir = other.outputDir ?: outputDir
+        mergeWalle.fileNameFormat = other.fileNameFormat ?: fileNameFormat
+        mergeWalle.channelFile = other.channelFile ?: channelFile
+        return mergeWalle
+    }
+}
+
+apply plugin: WallePlugin
+
+class WallePlugin implements Plugin<Project> {
+
+    @Override
+    void apply(Project target) {
+        target.extensions.create('walle', Walle.class)
+        target.plugins.withId('com.android.application') {
+            def baseWalle = target.walle
+            def walleConfigs = target.container(Walle.class)
+            target.android.extensions.walleConfigs = walleConfigs
+            target.android.applicationVariants.whenObjectAdded { variant ->
+                Walle mergeWalle = null
+                def flavorWalles = variant.productFlavors?.stream().map{flavor -> walleConfigs.findByName(flavor.name)}.collect().toList() ?: Collections.emptyList()
+                def buildTypeWalle = walleConfigs.findByName(variant.buildType.name)
+                if (buildTypeWalle == null && (variant.buildType.name == 'debug' || variant.buildType.name == 'profile')) {
+                    buildTypeWalle = new Walle(variant.buildType.name)
+                    buildTypeWalle.enabled = false
+                }
+                // buildType > flavor > base
+                def walles = []
+                walles.add(baseWalle)
+                walles.addAll(flavorWalles)
+                walles.add(buildTypeWalle)
+                for (def walle in walles) {
+                    if (mergeWalle == null) {
+                        mergeWalle = walle
+                    } else {
+                        mergeWalle = mergeWalle.mergeWith(walle)
+                    }
+                }
+
+                mergeWalle?.validate()
+
+                variant.assemble.doLast {
+                    if (mergeWalle == null || mergeWalle.enabled == null || !mergeWalle.enabled.booleanValue()) {
+                        target.logger.info("Gradle Walle is disabled for variant '${variant.name}'.")
+                        return
+                    }
+
+                    if (!variant.signingReady && !variant.outputsAreSigned) {
+                        target.logger.error("Signing not ready for Gradle Walle. Be sure to specify a signingConfig for variant '${variant.name}'.")
+                        return
+                    }
+
+                    if (!org.gradle.internal.os.OperatingSystem.current().isMacOsX() && !org.gradle.internal.os.OperatingSystem.current().isLinux()) {
+                        target.logger.info("Gradle Walle 仅能运行于 MacOS 或 Linux，不能运行于 ${org.gradle.internal.os.OperatingSystem.current().osName}。")
+                        return
+                    }
+
+                    System.out.println('--- walle ---')
+
+                    File apkFile = variant.outputs.first().outputFile as File
+                    System.out.println("apk file: ${apkFile.path}")
+
+                    def v2SigningEnabled = v2SigningEnabled(variant)
+                    System.out.println("v2SigningEnabled: ${v2SigningEnabled}")
+                    if (!v2SigningEnabled) {
+                        throw new IllegalStateException("${apkFile.path} has no v2 signature in Apk Signing Block!")
+                    }
+
+                    // android.buildToolsVersion，walle 官方暂未作 Apk Signature Scheme v3 支持
+                    def v3SigningEnabled = v3SigningEnabled(target, apkFile)
+                    System.out.println("v3SigningEnabled: ${v3SigningEnabled}")
+
+                    // 下载相关编译工具
+                    def buildToolsVersionForApkSigner = target.android.buildToolsVersion
+                    if (v3SigningEnabled) {
+                        buildToolsVersionForApkSigner = '27.0.3'
+                        if (mergeWalle.qihoo360 != null || mergeWalle.tencent != null) {
+                            if (!new File("${target.android.sdkDirectory.path}/build-tools/${buildToolsVersionForApkSigner}/apksigner").exists()) {
+                                target.exec {
+                                    commandLine 'bash', '-lc', "mkdir -p ~/.android/ && " +
+                                            "touch ~/.android/repositories.cfg && " +
+                                            "echo y | ${target.android.sdkDirectory.path}/tools/bin/sdkmanager --install \"build-tools;${buildToolsVersionForApkSigner}\""
+                                }
+                            }
+                        }
+                    }
+
+                    // 预备输出目录
+                    def outputDir = mergeWalle.outputDir
+                    if (outputDir == null) {
+                        outputDir = new File(apkFile.parentFile, 'walle')
+                    }
+                    def channelsDir = new File(outputDir, 'channels')
+                    if (!channelsDir.exists()) {
+                        channelsDir.mkdirs()
+                    }
+
+                    def nameVariantMap = [
+                            'appName'    : target.name,
+                            'projectName': target.rootProject.name,
+                            'buildType'  : variant.buildType.name,
+                            'versionName': variant.versionName,
+                            'versionCode': variant.versionCode,
+                            'packageName': variant.applicationId,
+                            'flavorName' : variant.flavorName,
+                            'channelId': 'channel'
+                    ]
+
+                    String fileNameFormat = mergeWalle.fileNameFormat ?: '${appName}-${buildType}-${channelId}.apk'
+                    def targetApkFile = new File(outputDir, new SimpleTemplateEngine().createTemplate(fileNameFormat).make(nameVariantMap).toString())// new File(outputDir, apkFile.name)
+
+                    // 重新签名/复制
+                    if (v3SigningEnabled) {
+                        System.out.println("sign apk: ${apkFile.path}")
+                        signApk(target, variant, buildToolsVersionForApkSigner, apkFile, targetApkFile)
+                    } else {
+                        target.exec {
+                            commandLine 'bash', '-lc', "cp ${apkFile.path} ${targetApkFile.path}"
+                        }
+                    }
+
+                    System.out.println("target apk file: ${targetApkFile.path}")
+
+                    // 读取渠道信息
+                    def channelIds = []
+                    mergeWalle.channelFile.eachLine { line ->
+                        def lineTrim = line.trim()
+                        if (lineTrim.length() != 0 && !lineTrim.startsWith("#")) {
+                            def channelId = line.split("#").first().trim()
+                            if (channelId.length() != 0) {
+                                channelIds.add(channelId)
+                            }
+                        }
+                    }
+
+//                    System.out.println("channelIds: ${channelIds}")
+                    channelIds.each { channelId ->
+                        nameVariantMap['channelId'] = channelId
+                        def channelApkFile = new File(channelsDir, new SimpleTemplateEngine().createTemplate(fileNameFormat).make(nameVariantMap).toString())
+
+                        def originalApkFile
+                        if (channelId == mergeWalle.qihoo360?.channelId) {
+                            // 360加固
+                            System.out.println("--> jiagu")
+                            File jiaguJarFile = mergeWalle.qihoo360.jiaguJarFile
+                            if (jiaguJarFile == null) {
+                                jiaguJarFile = target.file('script/jiagu/jiagu.jar')
+                            }
+                            if (!jiaguJarFile.exists()) {
+                                jiaguJarFile.parentFile.parentFile.mkdirs()
+                                System.out.println('download jiagu/jiagu.jar')
+                                if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
+                                    File jiaguZipFile = target.file('script/qihoo360-jiagu.zip')
+                                    if (!jiaguZipFile.exists()) {
+                                        def downloadUrl = 'https://down.360safe.com/360Jiagu/360jiagubao_mac.zip'
+                                        target.exec {
+                                            commandLine 'bash', '-lc', "curl -o ${jiaguZipFile.path} $downloadUrl"
+                                        }
+                                    }
+                                    target.exec {
+                                        commandLine 'bash', '-lc', "unzip -o ${jiaguZipFile.path} 'jiagu/*' -d ${jiaguJarFile.parentFile.parentFile.path}"
+                                    }
+                                } else if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
+                                    File jiaguZipFile = target.file('script/qihoo360-jiagu.zip')
+                                    if (!jiaguZipFile.exists()) {
+                                        def downloadUrl = 'https://down.360safe.com/360Jiagu/360jiagubao_linux_64.zip'
+                                        target.exec {
+                                            commandLine 'bash', '-lc', "wget -O ${jiaguZipFile.path} $downloadUrl"
+                                        }
+                                    }
+                                    target.exec {
+                                        commandLine 'bash', '-lc', "unzip -o ${jiaguZipFile.path} -d ${jiaguJarFile.parentFile.parentFile.path}"
+                                    }
+                                }
+                                if (!jiaguJarFile.exists()) {
+                                    throw new IllegalStateException('下载 jiagu/jiagu.jar 失败')
+                                }
+                            }
+                            File jiaguDir = new File(outputDir, 'jiagu')
+                            jiaguDir.mkdirs()
+                            if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
+                                target.exec {
+                                    commandLine 'bash', '-lc', "java -jar ${jiaguJarFile.path} -login ${mergeWalle.qihoo360.account} ${mergeWalle.qihoo360.password}"
+                                }
+                                target.exec {
+                                    commandLine 'bash', '-lc', "java -jar ${jiaguJarFile.path} -jiagu ${targetApkFile.path} ${jiaguDir.path}"
+                                }
+                            } else if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
+                                target.exec {
+                                    commandLine 'bash', '-lc', "${jiaguJarFile.parentFile.path}/java/bin/java -jar ${jiaguJarFile.path} -login ${mergeWalle.qihoo360.account} ${mergeWalle.qihoo360.password}"
+                                }
+                                target.exec {
+                                    commandLine 'bash', '-lc', "${jiaguJarFile.parentFile.path}/java/bin/java -jar ${jiaguJarFile.path} -jiagu ${targetApkFile.path} ${jiaguDir.path}"
+                                }
+                            }
+                            File jiaguApk = jiaguDir.listFiles(new FilenameFilter() {
+                                @Override
+                                boolean accept(File dir, String name) {
+                                    return name.toLowerCase().endsWith('.apk')
+                                }
+                            }).first()
+                            File jiaguApkSigned = new File(jiaguDir.path, targetApkFile.name.replace('.apk', '_jiagu_signed.apk'))
+                            System.out.println("sign jiagu apk: ${jiaguApk.path}")
+                            signApk(target, variant, buildToolsVersionForApkSigner, jiaguApk, jiaguApkSigned)
+                            System.out.println("<-- jiagu")
+
+                            originalApkFile = jiaguApkSigned
+                        } else if (channelId == mergeWalle.tencent?.channelId) {
+                            // 腾讯乐固
+                            System.out.println("--> legu")
+                            File leguJarFile = mergeWalle.tencent.leguJarFile
+                            if (leguJarFile == null) {
+                                leguJarFile = target.file('script/legu-all.jar')
+                            }
+                            if (!leguJarFile.exists()) {
+                                leguJarFile.parentFile.mkdirs()
+                                System.out.println('download legu-all.jar')
+                                def downloadUrl = 'https://github.com/v7lin/tencentcloud-legu/releases/download/3.0.60/legu-all.jar'
+                                if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
+                                    target.exec {
+                                        commandLine 'bash', '-lc', "curl -iL --max-redirs 5 -o ${leguJarFile.path} $downloadUrl"
+                                    }
+                                } else if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
+                                    target.exec {
+                                        commandLine 'bash', '-lc', "wget -O ${leguJarFile.path} $downloadUrl"
+                                    }
+                                }
+                                if (!leguJarFile.exists()) {
+                                    throw new IllegalStateException('下载 legu-all.jar 失败')
+                                }
+                            }
+                            File leguDir = new File(outputDir, 'legu')
+                            leguDir.mkdirs()
+                            target.exec {
+                                commandLine 'bash', '-lc', "java -jar ${leguJarFile.path} configure " +
+                                        "-secretId ${mergeWalle.tencent.secretId} " +
+                                        "-secretKey ${mergeWalle.tencent.secretKey} " +
+                                        "-region ${mergeWalle.tencent.region ?: 'ap-guangzhou'}"
+                            }
+                            target.exec {
+                                commandLine 'bash', '-lc', "java -jar ${leguJarFile.path} legu " +
+                                        "-in ${targetApkFile.path} " +
+                                        "-out ${leguDir.path}"
+                            }
+                            File leguApk = leguDir.listFiles(new FilenameFilter() {
+                                @Override
+                                boolean accept(File dir, String name) {
+                                    return name.toLowerCase().endsWith('.apk')
+                                }
+                            }).first()
+                            File leguApkSigned = new File(leguDir.path, targetApkFile.name.replace('.apk', '_legu_signed.apk'))
+                            System.out.println("sign legu apk: ${leguApk.path}")
+                            signApk(target, variant, buildToolsVersionForApkSigner, leguApk, leguApkSigned)
+                            System.out.println("<-- legu")
+
+                            originalApkFile = leguApkSigned
+                        } else {
+                            originalApkFile = targetApkFile
+                        }
+
+                        // walle 写渠道
+                        def jarFile = mergeWalle.jarFile
+                        if (jarFile == null) {
+                            jarFile = target.file('script/walle-cli-all.jar')
+                        }
+                        if (!jarFile.exists()) {
+                            jarFile.parentFile.mkdirs()
+                            System.out.println('download walle-cli-all.jar')
+                            def downloadUrl = 'https://github.com/Meituan-Dianping/walle/releases/download/v1.1.6/walle-cli-all.jar'
+                            if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
+                                target.exec {
+                                    commandLine 'bash', '-lc', "curl -iL --max-redirs 5 -o ${jarFile.path} $downloadUrl"
+                                }
+                            } else if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
+                                target.exec {
+                                    commandLine 'bash', '-lc', "wget -O ${jarFile.path} $downloadUrl"
+                                }
+                            }
+                            if (!jarFile.exists()) {
+                                throw new IllegalStateException('下载 walle-cli-all.jar 失败')
+                            }
+                        }
+                        if (!mergeWalle.channelFile.exists()) {
+                            throw new IllegalStateException('walle channel file 不存在')
+                        }
+                        target.exec {
+                            commandLine 'bash', '-lc', "java -jar ${jarFile.path} put -c ${channelId} ${originalApkFile.path} ${channelApkFile.path}"
+                        }
+                    }
+
+                    // webhook
+
+                    System.out.println('--- walle ---')
+                }
+            }
+        }
+        target.afterEvaluate {
+            if (!target.plugins.hasPlugin('com.android.application')) {
+                target.logger.warn("The Android Gradle Plugin was not applied. Gradle Walle will not be configured.")
+            }
+        }
+    }
+
+    boolean v2SigningEnabled(variant) {
+        def signingConfig = variant.signingConfig
+        return signingConfig.v2SigningEnabled
+    }
+
+    // android.buildToolsVersion 从 29.0.0 才开始支持 v3 signing scheme
+    // 28.0.x这玩意，Gradle自动签是v2的，Shell手动签的是v3的，而且还无法用以下方法判断！
+    boolean v3SigningEnabled(Project target, File apkFile) {
+        if (target.android.buildToolsVersion.startsWith('28')) {
+            return true
+        }
+        File verifyLogFile = new File(apkFile.parentFile, 'verify.log')
+        if (verifyLogFile.exists()) {
+            verifyLogFile.delete()
+        }
+        target.exec {
+            commandLine 'bash', '-lc', "${target.android.sdkDirectory.path}/build-tools/${target.android.buildToolsVersion}/apksigner verify --verbose ${apkFile.path} >> ${verifyLogFile.path}"
+        }
+        return verifyLogFile.readLines().contains('Verified using v3 scheme (APK Signature Scheme v3): true')
+    }
+
+    void signApk(Project target, variant, String buildToolsVersion, File apkFile, File targetApkFile) {
+        target.exec {
+            commandLine 'bash', '-lc', "${target.android.sdkDirectory.path}/build-tools/${buildToolsVersion}/apksigner sign " +
+                    "-ks ${variant.signingConfig.storeFile.path} " +
+                    "-ks-pass pass:${variant.signingConfig.storePassword} " +
+                    "-ks-key-alias ${variant.signingConfig.keyAlias} " +
+                    "--key-pass pass:${variant.signingConfig.keyPassword} " +
+                    "--out ${targetApkFile.path} ${apkFile.path}"
+        }
+    }
+}

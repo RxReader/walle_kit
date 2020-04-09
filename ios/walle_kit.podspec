@@ -5,9 +5,9 @@
 Pod::Spec.new do |s|
   s.name             = 'walle_kit'
   s.version          = '0.0.1'
-  s.summary          = 'A new flutter plugin project.'
+  s.summary          = 'A powerful flutter plugin with Walle SDK.'
   s.description      = <<-DESC
-A new flutter plugin project.
+A powerful flutter plugin with Walle SDK.
                        DESC
   s.homepage         = 'http://example.com'
   s.license          = { :file => '../LICENSE' }
