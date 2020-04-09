@@ -52,7 +52,7 @@ android {
 
     walleConfigs {
         release {
-            enabled = true
+            enabled = org.gradle.internal.os.OperatingSystem.current().isMacOsX()
 
 //            // https://github.com/v7lin/walle-docker
 //            jarFile = file('script/walle-cli-all.jar') // 默认：file('script/walle-cli-all.jar')
