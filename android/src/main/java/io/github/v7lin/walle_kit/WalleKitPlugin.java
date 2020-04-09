@@ -1,7 +1,13 @@
 package io.github.v7lin.walle_kit;
 
+import android.content.Context;
+
 import androidx.annotation.NonNull;
+
+import com.meituan.android.walle.WalleChannelReader;
+
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
@@ -10,11 +16,6 @@ import io.flutter.plugin.common.PluginRegistry.Registrar;
 
 /** WalleKitPlugin */
 public class WalleKitPlugin implements FlutterPlugin, MethodCallHandler {
-  @Override
-  public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
-    final MethodChannel channel = new MethodChannel(flutterPluginBinding.getFlutterEngine().getDartExecutor(), "walle_kit");
-    channel.setMethodCallHandler(new WalleKitPlugin());
-  }
 
   // This static function is optional and equivalent to onAttachedToEngine. It supports the old
   // pre-Flutter-1.12 Android projects. You are encouraged to continue supporting
@@ -26,20 +27,37 @@ public class WalleKitPlugin implements FlutterPlugin, MethodCallHandler {
   // depending on the user's project. onAttachedToEngine or registerWith must both be defined
   // in the same class.
   public static void registerWith(Registrar registrar) {
-    final MethodChannel channel = new MethodChannel(registrar.messenger(), "walle_kit");
-    channel.setMethodCallHandler(new WalleKitPlugin());
+    final WalleKitPlugin instance = new WalleKitPlugin();
+    instance.onAttachedToEngine(registrar.context(), registrar.messenger());
   }
 
+  private Context applicationContext;
+  private MethodChannel methodChannel;
+
   @Override
-  public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
-    if (call.method.equals("getPlatformVersion")) {
-      result.success("Android " + android.os.Build.VERSION.RELEASE);
-    } else {
-      result.notImplemented();
-    }
+  public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
+    onAttachedToEngine(binding.getApplicationContext(), binding.getBinaryMessenger());
+  }
+
+  private void onAttachedToEngine(Context applicationContext, BinaryMessenger messenger) {
+    this.applicationContext = applicationContext;
+    methodChannel = new MethodChannel(messenger, "v7lin.github.io/walle_kit");
+    methodChannel.setMethodCallHandler(this);
   }
 
   @Override
   public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
+    applicationContext = null;
+    methodChannel.setMethodCallHandler(null);
+    methodChannel = null;
+  }
+
+  @Override
+  public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
+    if (call.method.equals("getChannelId")) {
+      result.success(WalleChannelReader.getChannel(applicationContext));
+    } else {
+      result.notImplemented();
+    }
   }
 }

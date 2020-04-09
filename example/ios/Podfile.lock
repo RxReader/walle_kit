@@ -1,0 +1,22 @@
+PODS:
+  - Flutter (1.0.0)
+  - walle_kit (0.0.1):
+    - Flutter
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - walle_kit (from `.symlinks/plugins/walle_kit/ios`)
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  walle_kit:
+    :path: ".symlinks/plugins/walle_kit/ios"
+
+SPEC CHECKSUMS:
+  Flutter: 0e3d915762c693b495b44d77113d4970485de6ec
+  walle_kit: e09c2b41167365d17e4a5a967bb82d9fd6df4db3
+
+PODFILE CHECKSUM: 3dbe063e9c90a5d7c9e4e76e70a821b9e2c1d271
+
+COCOAPODS: 1.8.4
