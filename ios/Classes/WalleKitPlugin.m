@@ -11,7 +11,7 @@
 
 - (void)handleMethodCall:(FlutterMethodCall *)call result:(FlutterResult)result {
     if ([@"getChannelId" isEqualToString:call.method]) {
-        result(FlutterMethodNotImplemented);
+        result(nil);
     } else {
         result(FlutterMethodNotImplemented);
     }
