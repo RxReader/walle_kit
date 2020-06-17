@@ -5,7 +5,7 @@ import 'package:walle_kit/walle_kit.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const MethodChannel channel = MethodChannel('walle_kit');
+  const MethodChannel channel = MethodChannel('v7lin.github.io/walle_kit');
 
   setUp(() {
     channel.setMockMethodCallHandler((MethodCall call) async {
