@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:walle_kit/walle_kit.dart';
 
 void main() => runApp(MyApp());
@@ -20,7 +20,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _initChannelId() async {
-    String channelId = await WalleKit.getChannelId();
+    String channelId = await Walle.getChannelId();
 
     if (!mounted) {
       return;
