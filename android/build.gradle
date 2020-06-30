@@ -35,11 +35,21 @@ android {
     lintOptions {
         disable 'InvalidPackage'
     }
+
+    flavorDimensions 'vendor'
+
+    productFlavors {
+        vendor {
+            dimension 'vendor'
+
+            // library 混淆 -> 随 library 引用，自动添加到 apk 打包混淆
+            consumerProguardFiles 'consumer-vendor-rules.pro'
+        }
+    }
 }
 
 dependencies {
     implementation 'androidx.annotation:annotation:1.0.0'
 
-    // walle
-    implementation 'com.meituan.android.walle:library:1.1.6'
+    vendorImplementation 'com.meituan.android.walle:library:1.1.6'
 }
