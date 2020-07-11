@@ -48,9 +48,9 @@ public class WalleKitPlugin implements FlutterPlugin, MethodCallHandler {
 
     @Override
     public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-        applicationContext = null;
         channel.setMethodCallHandler(null);
         channel = null;
+        applicationContext = null;
     }
 
     // --- MethodCallHandler
