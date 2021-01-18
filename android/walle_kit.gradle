@@ -13,7 +13,7 @@
 //            enabled = true
 //
 ////            // https://github.com/v7lin/walle-docker
-////            jarFile = file('script/walle-cli-all.jar') // 默认：file('script/walle-cli-all.jar')
+////            jarFile = file('script/walle-cli-all-1.1.7.jar') // 默认：file('script/walle-cli-all-1.1.7.jar')
 //
 //            qihoo360 {
 ////                // https://github.com/v7lin/qihoo360-jiagu-docker
@@ -172,7 +172,7 @@ class WallePlugin implements Plugin<Project> {
             target.android.extensions.walleConfigs = walleConfigs
             target.android.applicationVariants.whenObjectAdded { variant ->
                 Walle mergeWalle = null
-                def flavorWalles = variant.productFlavors?.stream().map{flavor -> walleConfigs.findByName(flavor.name)}.collect().toList() ?: Collections.emptyList()
+                def flavorWalles = variant.productFlavors?.stream()?.map{flavor -> walleConfigs.findByName(flavor.name)}?.collect()?.toList() ?: Collections.emptyList()
                 def buildTypeWalle = walleConfigs.findByName(variant.buildType.name)
                 if (buildTypeWalle == null && (variant.buildType.name == 'debug' || variant.buildType.name == 'profile')) {
                     buildTypeWalle = new Walle(variant.buildType.name)
@@ -391,7 +391,7 @@ class WallePlugin implements Plugin<Project> {
                         // walle 写渠道
                         def jarFile = mergeWalle.jarFile
                         if (jarFile == null) {
-                            jarFile = target.file('script/walle-cli-all.jar')
+                            jarFile = target.file('script/walle-cli-all-1.1.7.jar')
                         }
                         if (!jarFile.exists()) {
                             jarFile.parentFile.mkdirs()
