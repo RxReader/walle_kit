@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'walle_kit'
-  s.version          = '1.1.1'
+  s.version          = '1.1.2'
   s.summary          = 'A powerful Flutter plugin allowing developers to read/write channelId to apk with Walle Tools/SDKs.'
   s.description      = <<-DESC
 A powerful Flutter plugin allowing developers to read/write channelId to apk with Walle Tools/SDKs.
@@ -17,6 +17,9 @@ A powerful Flutter plugin allowing developers to read/write channelId to apk wit
   s.public_header_files = 'Classes/**/*.h'
   s.dependency 'Flutter'
   s.platform = :ios, '8.0'
+
+  s.subspec 'vendor' do |sp|
+  end
 
   # Flutter.framework does not contain a i386 slice. Only x86_64 simulators are supported.
   s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'VALID_ARCHS[sdk=iphonesimulator*]' => 'x86_64' }
