@@ -1,5 +1,5 @@
 group 'io.github.v7lin.walle_kit'
-version '1.1.2'
+version '2.0.0'
 
 buildscript {
     repositories {
