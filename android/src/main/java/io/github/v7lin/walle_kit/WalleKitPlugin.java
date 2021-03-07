@@ -37,7 +37,7 @@ public class WalleKitPlugin implements FlutterPlugin, MethodCallHandler {
 
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
-        if (call.method.equals("getChannelId")) {
+        if ("getChannelId".equals(call.method)) {
             result.success(WalleChannelReader.getChannel(applicationContext));
         } else {
             result.notImplemented();
