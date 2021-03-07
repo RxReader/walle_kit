@@ -20,14 +20,14 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _initChannelId() async {
-    String channelId = await Walle.getChannelId();
+    final String? channelId = await Walle.getChannelId();
 
     if (!mounted) {
       return;
     }
 
     setState(() {
-      _channelId = channelId ?? '';
+      _channelId = channelId ?? 'unknown';
     });
   }
 
