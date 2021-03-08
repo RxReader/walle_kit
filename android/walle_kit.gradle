@@ -12,11 +12,11 @@
 //        prod {
 //            enabled = true
 //
-////            // https://github.com/v7lin/walle-docker
+////            // https://github.com/rxreader/walle-docker
 ////            jarFile = file('script/walle-cli-all-1.1.7.jar') // 默认：file('script/walle-cli-all-1.1.7.jar')
 //
 //            qihoo360 {
-////                // https://github.com/v7lin/qihoo360-jiagu-docker
+////                // https://github.com/rxreader/qihoo360-jiagu-docker
 ////                jiaguJarFile = file('script/jiagu/jiagu.jar') // 默认：file('script/jiagu/jiagu.jar')
 //
 //                account = 'xxx'
@@ -25,7 +25,7 @@
 //            }
 //
 //            tencent {
-////                // https://github.com/v7lin/tencentcloud-legu
+////                // https://github.com/rxreader/tencentcloud-legu
 ////                leguJarFile = file('script/legu-all.jar') // 默认：file('script/legu-all.jar')
 //
 //                secretId = 'xxx'
@@ -345,7 +345,7 @@ class WallePlugin implements Plugin<Project> {
                             if (!leguJarFile.exists()) {
                                 leguJarFile.parentFile.mkdirs()
                                 System.out.println('download legu-all.jar')
-                                def downloadUrl = 'https://github.com/v7lin/tencentcloud-legu/releases/download/3.0.60/legu-all.jar'
+                                def downloadUrl = 'https://github.com/rxreader/tencentcloud-legu/releases/download/3.0.60/legu-all.jar'
                                 if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
                                     target.exec {
                                         commandLine 'bash', '-lc', "curl -iL --max-redirs 5 -o ${leguJarFile.path} $downloadUrl"
