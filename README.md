@@ -1,30 +1,30 @@
 # walle_kit
 
-[![Build Status](https://cloud.drone.io/api/badges/v7lin/walle_kit/status.svg)](https://cloud.drone.io/v7lin/walle_kit)
-[![Codecov](https://codecov.io/gh/v7lin/walle_kit/branch/master/graph/badge.svg)](https://codecov.io/gh/v7lin/walle_kit)
-[![GitHub Tag](https://img.shields.io/github/tag/v7lin/walle_kit.svg)](https://github.com/v7lin/walle_kit/releases)
+[![Build Status](https://cloud.drone.io/api/badges/rxreader/walle_kit/status.svg)](https://cloud.drone.io/rxreader/walle_kit)
+[![Codecov](https://codecov.io/gh/rxreader/walle_kit/branch/master/graph/badge.svg)](https://codecov.io/gh/rxreader/walle_kit)
+[![GitHub Tag](https://img.shields.io/github/tag/rxreader/walle_kit.svg)](https://github.com/rxreader/walle_kit/releases)
 [![Pub Package](https://img.shields.io/pub/v/walle_kit.svg)](https://pub.dartlang.org/packages/walle_kit)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/v7lin/walle_kit/blob/master/LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/rxreader/walle_kit/blob/master/LICENSE)
 
 flutter版walle多渠道打包工具
 
 ## flutter toolkit
 
-* [flutter版微信SDK](https://github.com/v7lin/wechat_kit)
-* [flutter版腾讯(QQ)SDK](https://github.com/v7lin/tencent_kit)
-* [flutter版新浪微博SDK](https://github.com/v7lin/weibo_kit)
-* [flutter版支付宝SDK](https://github.com/v7lin/alipay_kit)
-* [flutter版walle渠道打包工具](https://github.com/v7lin/walle_kit)
+* [flutter版微信SDK](https://github.com/rxreader/wechat_kit)
+* [flutter版腾讯(QQ)SDK](https://github.com/rxreader/tencent_kit)
+* [flutter版新浪微博SDK](https://github.com/rxreader/weibo_kit)
+* [flutter版支付宝SDK](https://github.com/rxreader/alipay_kit)
+* [flutter版walle渠道打包工具](https://github.com/rxreader/walle_kit)
 
 ## dart/flutter 私服
 
-* [simple_pub_server](https://github.com/v7lin/simple_pub_server)
+* [simple_pub_server](https://github.com/rxreader/simple_pub_server)
 
 ## docs
 
 * [Meituan-Dianping/walle](https://github.com/Meituan-Dianping/walle)
-* [v7lin/qihoo360-jiagu-docker](https://github.com/v7lin/qihoo360-jiagu-docker)
-* [v7lin/tencentcloud-legu](https://github.com/v7lin/tencentcloud-legu)
+* [rxreader/qihoo360-jiagu-docker](https://github.com/rxreader/qihoo360-jiagu-docker)
+* [rxreader/tencentcloud-legu](https://github.com/rxreader/tencentcloud-legu)
 
 ## Android
 
@@ -35,6 +35,19 @@ flutter版walle多渠道打包工具
 apply from: "${rootProject.findProject(":walle_kit").projectDir}/walle_kit.gradle"
 ```
 
+* fileNameFormat
+
+```groovy
+// appName: 
+// projectName: 
+// buildType: 
+// versionName: 
+// versionCode: 
+// packageName: 
+// flavorName: 
+// channelId: 
+```
+
 * without flavors
 
 ```groovy
@@ -42,11 +55,11 @@ apply from: "${rootProject.findProject(":walle_kit").projectDir}/walle_kit.gradl
 walle {
     enabled = true
 
-//    // https://github.com/v7lin/walle-docker
+//    // https://github.com/rxreader/walle-docker
 //    jarFile = file('script/walle-cli-all.jar') // 默认：file('script/walle-cli-all.jar')
 
     qihoo360 {
-//        // https://github.com/v7lin/qihoo360-jiagu-docker
+//        // https://github.com/rxreader/qihoo360-jiagu-docker
 //        jiaguJarFile = file('script/jiagu/jiagu.jar') // 默认：file('script/jiagu/jiagu.jar')
 
         account = 'xxx'
@@ -55,7 +68,7 @@ walle {
     }
 
     tencent {
-//        // https://github.com/v7lin/tencentcloud-legu
+//        // https://github.com/rxreader/tencentcloud-legu
 //        leguJarFile = file('script/legu-all.jar') // 默认：file('script/legu-all.jar')
 
         secretId = 'xxx'
@@ -77,11 +90,11 @@ android {
         release {
             enabled = true
 
-//            // https://github.com/v7lin/walle-docker
+//            // https://github.com/rxreader/walle-docker
 //            jarFile = file('script/walle-cli-all.jar') // 默认：file('script/walle-cli-all.jar')
 
             qihoo360 {
-//                // https://github.com/v7lin/qihoo360-jiagu-docker
+//                // https://github.com/rxreader/qihoo360-jiagu-docker
 //                jiaguJarFile = file('script/jiagu/jiagu.jar') // 默认：file('script/jiagu/jiagu.jar')
 
                 account = 'xxx'
@@ -90,7 +103,7 @@ android {
             }
 
             tencent {
-//                // https://github.com/v7lin/tencentcloud-legu
+//                // https://github.com/rxreader/tencentcloud-legu
 //                leguJarFile = file('script/legu-all.jar') // 默认：file('script/legu-all.jar')
 
                 secretId = 'xxx'
@@ -125,11 +138,11 @@ android {
         prod {
             enabled = true
 
-//            // https://github.com/v7lin/walle-docker
+//            // https://github.com/rxreader/walle-docker
 //            jarFile = file('script/walle-cli-all.jar') // 默认：file('script/walle-cli-all.jar')
 
             qihoo360 {
-//                // https://github.com/v7lin/qihoo360-jiagu-docker
+//                // https://github.com/rxreader/qihoo360-jiagu-docker
 //                jiaguJarFile = file('script/jiagu/jiagu.jar') // 默认：file('script/jiagu/jiagu.jar')
 
                 account = 'xxx'
@@ -138,7 +151,7 @@ android {
             }
 
             tencent {
-//                // https://github.com/v7lin/tencentcloud-legu
+//                // https://github.com/rxreader/tencentcloud-legu
 //                leguJarFile = file('script/legu-all.jar') // 默认：file('script/legu-all.jar')
 
                 secretId = 'xxx'
@@ -173,7 +186,7 @@ walle {
 dependencies:
   walle_kit:
     git:
-      url: https://github.com/v7lin/walle_kit.git
+      url: https://github.com/rxreader/walle_kit.git
 ```
 
 * release
