@@ -36,6 +36,7 @@
 //
 //            outputDir = file("${project.buildDir}/outputs/apk/${flavorName}/${buildType}/walle") // 默认：file("${project.buildDir}/outputs/apk/${flavorName}/${buildType}/walle")
 //            fileNameFormat = '${appName}-${buildType}-${channelId}.apk' // 默认：'${appName}-${buildType}-${channelId}.apk'
+////            channelType = 0 // 0：默认；1：json
 //            channelFile = file('channel')
 //        }
 //    }
@@ -112,6 +113,7 @@ class Walle {
     Tencent tencent
     File outputDir
     String fileNameFormat
+    Integer channelType
     File channelFile
 
     Walle(String name = 'default') {
@@ -136,11 +138,11 @@ class Walle {
         if (enabled == null || !enabled.booleanValue()) {
             return
         }
+        qihoo360?.validate(name)
+        tencent?.validate(name)
         if (channelFile == null) {
             throw new IllegalStateException("walle channel file is null for variant '$name'")
         }
-        qihoo360?.validate(name)
-        tencent?.validate(name)
     }
 
     Walle mergeWith(Walle other) {
@@ -154,6 +156,7 @@ class Walle {
         mergeWalle.tencent = other.tencent ?: tencent
         mergeWalle.outputDir = other.outputDir ?: outputDir
         mergeWalle.fileNameFormat = other.fileNameFormat ?: fileNameFormat
+        mergeWalle.channelType = other.channelType ?: channelType
         mergeWalle.channelFile = other.channelFile ?: channelFile
         return mergeWalle
     }
@@ -253,12 +256,22 @@ class WallePlugin implements Plugin<Project> {
 
                     // 读取渠道信息
                     def channelIds = []
-                    mergeWalle.channelFile.eachLine { line ->
-                        def lineTrim = line.trim()
-                        if (lineTrim.length() != 0 && !lineTrim.startsWith("#")) {
-                            def channelId = line.split("#").first().trim()
-                            if (channelId.length() != 0) {
-                                channelIds.add(channelId)
+                    if (mergeWalle.channelType == 1) {
+                        def slurper = new groovy.json.JsonSlurper()
+                        def channels = slurper.parse(mergeWalle.channelFile)
+                        for (def channel in channels) {
+                            System.out.println("channel: ${channel.alias} - ${channel.channelId}")
+                            channelIds.add(channel.channelId)
+                        }
+                    } else {
+                        mergeWalle.channelFile.eachLine { line ->
+                            def lineTrim = line.trim()
+                            if (lineTrim.length() != 0 && !lineTrim.startsWith("#")) {
+                                def channelId = line.split("#").first().trim()
+                                if (channelId.length() != 0) {
+                                    System.out.println("channel: ${channelId}")
+                                    channelIds.add(channelId)
+                                }
                             }
                         }
                     }

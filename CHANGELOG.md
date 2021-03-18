@@ -1,3 +1,7 @@
+## 2.0.1
+
+* channel json
+
 ## 2.0.0
 
 * nullsafety
