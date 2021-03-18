@@ -2,7 +2,7 @@ name: walle_kit
 description: A powerful Flutter plugin allowing developers to read/write channelId to apk with Walle Tools/SDKs.
 version: 2.0.1
 # author: v7lin <v7lin@qq.com>
-homepage: https://github.com/v7lin/walle_kit
+homepage: https://github.com/rxreader/walle_kit
 
 environment:
   sdk: ">=2.12.0 <3.0.0"
