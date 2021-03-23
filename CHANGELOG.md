@@ -5,13 +5,12 @@
 ## 2.0.0
 
 * nullsafety
-
-## 1.1.2
-
 * 不再兼容v1插件
+* 升级walle 1.1.7
 
 ## 1.1.1
 
+* channel json
 * 升级walle 1.1.7
 
 ## 1.1.0
