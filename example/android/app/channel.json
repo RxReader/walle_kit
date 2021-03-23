@@ -1,0 +1,42 @@
+[
+  {
+    "alias": "默认",
+    "channelId": "official"
+  },
+  {
+    "alias": "奇虎360",
+    "channelId": "qihu360"
+  },
+  {
+    "alias": "百度",
+    "channelId": "baidu"
+  },
+  {
+    "alias": "小米",
+    "channelId": "xiaomi"
+  },
+  {
+    "alias": "腾讯",
+    "channelId": "tencent"
+  },
+  {
+    "alias": "阿里云",
+    "channelId": "aliyun"
+  },
+  {
+    "alias": "华为",
+    "channelId": "huawei"
+  },
+  {
+    "alias": "Oppo",
+    "channelId": "oppo"
+  },
+  {
+    "alias": "Vivo",
+    "channelId": "vivo"
+  },
+  {
+    "alias": "抖音",
+    "channelId": "douyin"
+  }
+]
