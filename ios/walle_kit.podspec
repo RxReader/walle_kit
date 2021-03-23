@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'walle_kit'
-  s.version          = '1.1.1'
+  s.version          = '1.1.2'
   s.summary          = 'A powerful Flutter plugin allowing developers to read/write channelId to apk with Walle Tools/SDKs.'
   s.description      = <<-DESC
 A powerful Flutter plugin allowing developers to read/write channelId to apk with Walle Tools/SDKs.
