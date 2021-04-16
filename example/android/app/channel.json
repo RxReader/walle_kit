@@ -5,38 +5,47 @@
   },
   {
     "alias": "奇虎360",
-    "channelId": "qihu360"
+    "channelId": "qihu360",
+    "storeDir": "market"
   },
   {
     "alias": "百度",
-    "channelId": "baidu"
+    "channelId": "baidu",
+    "storeDir": "market"
   },
   {
     "alias": "小米",
-    "channelId": "xiaomi"
+    "channelId": "xiaomi",
+    "storeDir": "market"
   },
   {
     "alias": "腾讯",
-    "channelId": "tencent"
+    "channelId": "tencent",
+    "storeDir": "market"
   },
   {
     "alias": "阿里云",
-    "channelId": "aliyun"
+    "channelId": "aliyun",
+    "storeDir": "market"
   },
   {
     "alias": "华为",
-    "channelId": "huawei"
+    "channelId": "huawei",
+    "storeDir": "market"
   },
   {
     "alias": "Oppo",
-    "channelId": "oppo"
+    "channelId": "oppo",
+    "storeDir": "market"
   },
   {
     "alias": "Vivo",
-    "channelId": "vivo"
+    "channelId": "vivo",
+    "storeDir": "market"
   },
   {
     "alias": "抖音",
-    "channelId": "douyin"
+    "channelId": "douyin",
+    "storeDir": "market"
   }
 ]
