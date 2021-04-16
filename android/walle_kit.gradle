@@ -47,8 +47,6 @@
 //}
 //
 
-import groovy.text.SimpleTemplateEngine
-
 buildscript {
     repositories {
         google()
@@ -140,6 +138,9 @@ class Walle {
         }
         qihoo360?.validate(name)
         tencent?.validate(name)
+        if (channelType != null && channelType != 0 && channelType != 1) {
+            throw new IllegalStateException("walle channel type is unsupported for variant '$name'")
+        }
         if (channelFile == null) {
             throw new IllegalStateException("walle channel file is null for variant '$name'")
         }
@@ -245,7 +246,7 @@ class WallePlugin implements Plugin<Project> {
                     ]
 
                     String fileNameFormat = mergeWalle.fileNameFormat ?: '${appName}-${buildType}-${channelId}.apk'
-                    def targetApkFile = new File(outputDir, new SimpleTemplateEngine().createTemplate(fileNameFormat).make(nameVariantMap).toString())// new File(outputDir, apkFile.name)
+                    def targetApkFile = new File(outputDir, new groovy.text.SimpleTemplateEngine().createTemplate(fileNameFormat).make(nameVariantMap).toString())// new File(outputDir, apkFile.name)
 
                     // 复制
                     target.exec {
@@ -255,34 +256,37 @@ class WallePlugin implements Plugin<Project> {
                     System.out.println("target apk file: ${targetApkFile.path}")
 
                     // 读取渠道信息
-                    def channelIds = []
+                    def channels = []
                     if (mergeWalle.channelType == 1) {
                         def slurper = new groovy.json.JsonSlurper()
-                        def channels = slurper.parse(mergeWalle.channelFile)
-                        for (def channel in channels) {
-                            System.out.println("channel: ${channel.alias} - ${channel.channelId}")
-                            channelIds.add(channel.channelId)
-                        }
+                        channels = slurper.parse(mergeWalle.channelFile)
                     } else {
                         mergeWalle.channelFile.eachLine { line ->
                             def lineTrim = line.trim()
                             if (lineTrim.length() != 0 && !lineTrim.startsWith("#")) {
                                 def channelId = line.split("#").first().trim()
                                 if (channelId.length() != 0) {
-                                    System.out.println("channel: ${channelId}")
-                                    channelIds.add(channelId)
+//                                    System.out.println("channel: ${channelId}")
+                                    channels.add(['alias': channelId, 'channelId': channelId])
                                 }
                             }
                         }
                     }
 
 //                    System.out.println("channelIds: ${channelIds}")
-                    channelIds.each { channelId ->
-                        nameVariantMap['channelId'] = channelId
-                        def channelApkFile = new File(channelsDir, new SimpleTemplateEngine().createTemplate(fileNameFormat).make(nameVariantMap).toString())
+                    channels.each { channel ->
+                        nameVariantMap['channelId'] = channel.channelId
+                        File storeDir = channelsDir
+                        if (channel.storeDir != null) {
+                            storeDir = new File(storeDir, channel.storeDir)
+                            if (!storeDir.exists()) {
+                                storeDir.mkdirs()
+                            }
+                        }
+                        def channelApkFile = new File(storeDir, new groovy.text.SimpleTemplateEngine().createTemplate(fileNameFormat).make(nameVariantMap).toString())
 
                         def originalApkFile
-                        if (channelId == mergeWalle.qihoo360?.channelId) {
+                        if (channel.channelId == mergeWalle.qihoo360?.channelId) {
                             // 360加固
                             System.out.println("--> jiagu")
                             File jiaguJarFile = mergeWalle.qihoo360.jiaguJarFile
@@ -348,7 +352,7 @@ class WallePlugin implements Plugin<Project> {
                             System.out.println("<-- jiagu")
 
                             originalApkFile = jiaguApkSigned
-                        } else if (channelId == mergeWalle.tencent?.channelId) {
+                        } else if (channel.channelId == mergeWalle.tencent?.channelId) {
                             // 腾讯乐固
                             System.out.println("--> legu")
                             File leguJarFile = mergeWalle.tencent.leguJarFile
@@ -444,7 +448,7 @@ class WallePlugin implements Plugin<Project> {
                             throw new IllegalStateException('walle channel file 不存在')
                         }
                         target.exec {
-                            commandLine 'bash', '-lc', "java -jar ${jarFile.path} put -c ${channelId} ${originalApkFile.path} ${channelApkFile.path}"
+                            commandLine 'bash', '-lc', "java -jar ${jarFile.path} put -c ${channel.channelId} ${originalApkFile.path} ${channelApkFile.path}"
                         }
                     }
 

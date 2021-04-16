@@ -1,9 +1,9 @@
 PODS:
   - Flutter (1.0.0)
-  - walle_kit (2.0.1):
+  - walle_kit (2.0.2):
     - Flutter
-    - walle_kit/vendor (= 2.0.1)
-  - walle_kit/vendor (2.0.1):
+    - walle_kit/vendor (= 2.0.2)
+  - walle_kit/vendor (2.0.2):
     - Flutter
 
 DEPENDENCIES:
@@ -18,7 +18,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: 434fef37c0980e73bb6479ef766c45957d4b510c
-  walle_kit: e76d69b27c1ce3b664547a1d374d068426b0a19a
+  walle_kit: dbfb9ebc9f78bfef9232a2a786f06838c0bc7f4b
 
 PODFILE CHECKSUM: 8e679eca47255a8ca8067c4c67aab20e64cb974d
 
