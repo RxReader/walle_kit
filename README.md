@@ -1,7 +1,5 @@
 # walle_kit
 
-[![Build Status](https://cloud.drone.io/api/badges/rxreader/walle_kit/status.svg)](https://cloud.drone.io/rxreader/walle_kit)
-[![Codecov](https://codecov.io/gh/rxreader/walle_kit/branch/master/graph/badge.svg)](https://codecov.io/gh/rxreader/walle_kit)
 [![GitHub Tag](https://img.shields.io/github/tag/rxreader/walle_kit.svg)](https://github.com/rxreader/walle_kit/releases)
 [![Pub Package](https://img.shields.io/pub/v/walle_kit.svg)](https://pub.dartlang.org/packages/walle_kit)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/rxreader/walle_kit/blob/master/LICENSE)
@@ -196,13 +194,6 @@ dependencies:
   walle_kit: ^${latestTag}
 ```
 
-## Getting Started
+## Star History
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/developing-packages/),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
-
-For help getting started with Flutter, view our 
-[online documentation](https://flutter.dev/docs), which offers tutorials, 
-samples, guidance on mobile development, and a full API reference.
+![stars](https://starchart.cc/rxreader/walle_kit.svg)
