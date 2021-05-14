@@ -459,6 +459,9 @@ class WallePlugin implements Plugin<Project> {
             String downloadUrl = 'https://github.com/rxreader/walle/releases/download/v1.1.7/walle-cli-all-1.1.7.jar'
             download(downloadUrl, jarFile)
         }
+        if (!jarFile.exists()) {
+            throw new RuntimeException("下载 ${jarFile.name} 失败")
+        }
         if (org.gradle.internal.os.OperatingSystem.current().isMacOsX() || org.gradle.internal.os.OperatingSystem.current().isLinux()) {
             target.exec {
                 commandLine 'bash', '-lc', "java -jar ${jarFile.path} put -c ${channel.channelId} ${apkFile.path} ${channelApkFile.path}"
