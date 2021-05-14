@@ -72,13 +72,13 @@ class Qihoo360 {
 
     void validate(String variant) {
         if (account == null || account.empty) {
-            throw new IllegalStateException("Qihoo360 account is empty for variant '$variant'")
+            throw new RuntimeException("Qihoo360 account is empty for variant '$variant'")
         }
         if (password == null || password.empty) {
-            throw new IllegalStateException("Qihoo360 password is empty for variant '$variant'")
+            throw new RuntimeException("Qihoo360 password is empty for variant '$variant'")
         }
         if (channelId == null || channelId.empty) {
-            throw new IllegalStateException("Qihoo360 channelId is empty for variant '$variant'")
+            throw new RuntimeException("Qihoo360 channelId is empty for variant '$variant'")
         }
     }
 }
@@ -92,13 +92,13 @@ class Tencent {
 
     void validate(String variant) {
         if (secretId == null || secretId.empty) {
-            throw new IllegalStateException("Tencent secretId is empty for variant '$variant'")
+            throw new RuntimeException("Tencent secretId is empty for variant '$variant'")
         }
         if (secretKey == null || secretKey.empty) {
-            throw new IllegalStateException("Tencent secretKey is empty for variant '$variant'")
+            throw new RuntimeException("Tencent secretKey is empty for variant '$variant'")
         }
         if (channelId == null || channelId.empty) {
-            throw new IllegalStateException("Tencent channelId is empty for variant '$variant'")
+            throw new RuntimeException("Tencent channelId is empty for variant '$variant'")
         }
     }
 }
@@ -139,10 +139,10 @@ class Walle {
         qihoo360?.validate(name)
         tencent?.validate(name)
         if (channelType != null && channelType != 0 && channelType != 1) {
-            throw new IllegalStateException("walle channel type is unsupported for variant '$name'")
+            throw new RuntimeException("walle channel type is unsupported for variant '$name'")
         }
         if (channelFile == null) {
-            throw new IllegalStateException("walle channel file is null for variant '$name'")
+            throw new RuntimeException("walle channel file is null for variant '$name'")
         }
     }
 
@@ -150,7 +150,7 @@ class Walle {
         if (other == null) {
             return this
         }
-        def mergeWalle = new Walle(name == 'default' ? other.name : (other.name == 'default' ? name : "$name${other.name.capitalize()}"))
+        Walle mergeWalle = new Walle(name == 'default' ? other.name : (other.name == 'default' ? name : "$name${other.name.capitalize()}"))
         mergeWalle.enabled = other.enabled != null ? other.enabled : enabled
         mergeWalle.jarFile = other.jarFile ?: jarFile
         mergeWalle.qihoo360 = other.qihoo360 ?: qihoo360
@@ -171,23 +171,23 @@ class WallePlugin implements Plugin<Project> {
     void apply(Project target) {
         target.extensions.create('walle', Walle.class)
         target.plugins.withId('com.android.application') {
-            def baseWalle = target.walle
+            Walle baseWalle = target.walle
             def walleConfigs = target.container(Walle.class)
             target.android.extensions.walleConfigs = walleConfigs
             target.android.applicationVariants.whenObjectAdded { variant ->
                 Walle mergeWalle = null
-                def flavorWalles = variant.productFlavors?.stream()?.map{flavor -> walleConfigs.findByName(flavor.name)}?.collect()?.toList() ?: Collections.emptyList()
-                def buildTypeWalle = walleConfigs.findByName(variant.buildType.name)
+                List<Walle> flavorWalles = variant.productFlavors?.stream()?.map{flavor -> walleConfigs.findByName(flavor.name)}?.collect()?.toList() ?: Collections.emptyList()
+                Walle buildTypeWalle = walleConfigs.findByName(variant.buildType.name)
                 if (buildTypeWalle == null && (variant.buildType.name == 'debug' || variant.buildType.name == 'profile')) {
                     buildTypeWalle = new Walle(variant.buildType.name)
                     buildTypeWalle.enabled = false
                 }
                 // buildType > flavor > base
-                def walles = []
+                List<Walle> walles = []
                 walles.add(baseWalle)
                 walles.addAll(flavorWalles)
                 walles.add(buildTypeWalle)
-                for (def walle in walles) {
+                for (Walle walle in walles) {
                     if (mergeWalle == null) {
                         mergeWalle = walle
                     } else {
@@ -208,28 +208,28 @@ class WallePlugin implements Plugin<Project> {
                         return
                     }
 
-                    if (!org.gradle.internal.os.OperatingSystem.current().isMacOsX() && !org.gradle.internal.os.OperatingSystem.current().isLinux()) {
-                        target.logger.info("Gradle Walle 仅能运行于 MacOS 或 Linux，不能运行于 ${org.gradle.internal.os.OperatingSystem.current().osName}。")
+                    if (!org.gradle.internal.os.OperatingSystem.current().isMacOsX() && !org.gradle.internal.os.OperatingSystem.current().isLinux() && !org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+                        target.logger.info("Gradle Walle 仅能运行于 MacOS/Linux/Windows，不能运行于 ${org.gradle.internal.os.OperatingSystem.current().osName}。")
                         return
                     }
 
-                    System.out.println('--- walle ---')
+                    println '--- walle ---'
 
                     File apkFile = variant.outputs.first().outputFile as File
-                    System.out.println("apk file: ${apkFile.path}")
+                    println "apk file: ${apkFile.path}"
 
-                    def v2SigningEnabled = v2SigningEnabled(variant)
-                    System.out.println("v2SigningEnabled: ${v2SigningEnabled}")
+                    boolean v2SigningEnabled = v2SigningEnabled(variant)
+                    println "v2SigningEnabled: ${v2SigningEnabled}"
                     if (!v2SigningEnabled) {
-                        throw new IllegalStateException("${apkFile.path} has no v2 signature in Apk Signing Block!")
+                        throw new RuntimeException("${apkFile.path} has no v2 signature in Apk Signing Block!")
                     }
 
                     // 预备输出目录
-                    def outputDir = mergeWalle.outputDir
+                    File outputDir = mergeWalle.outputDir
                     if (outputDir == null) {
                         outputDir = new File(apkFile.parentFile, 'walle')
                     }
-                    def channelsDir = new File(outputDir, 'channels')
+                    File channelsDir = new File(outputDir, 'channels')
                     if (!channelsDir.exists()) {
                         channelsDir.mkdirs()
                     }
@@ -246,14 +246,20 @@ class WallePlugin implements Plugin<Project> {
                     ]
 
                     String fileNameFormat = mergeWalle.fileNameFormat ?: '${appName}-${buildType}-${channelId}.apk'
-                    def targetApkFile = new File(outputDir, new groovy.text.SimpleTemplateEngine().createTemplate(fileNameFormat).make(nameVariantMap).toString())// new File(outputDir, apkFile.name)
+                    File targetApkFile = new File(outputDir, new groovy.text.SimpleTemplateEngine().createTemplate(fileNameFormat).make(nameVariantMap).toString())// new File(outputDir, apkFile.name)
 
                     // 复制
-                    target.exec {
-                        commandLine 'bash', '-lc', "cp ${apkFile.path} ${targetApkFile.path}"
+                    if (org.gradle.internal.os.OperatingSystem.current().isMacOsX() || org.gradle.internal.os.OperatingSystem.current().isLinux()) {
+                        target.exec {
+                            commandLine 'bash', '-lc', "cp ${apkFile.path} ${targetApkFile.path}"
+                        }
+                    } else if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+                        target.exec {
+                            commandLine 'cmd', '/c', "xcopy -f ${apkFile.path} ${targetApkFile.path}"
+                        }
                     }
 
-                    System.out.println("target apk file: ${targetApkFile.path}")
+                    println "target apk file: ${targetApkFile.path}"
 
                     // 读取渠道信息
                     def channels = []
@@ -262,18 +268,16 @@ class WallePlugin implements Plugin<Project> {
                         channels = slurper.parse(mergeWalle.channelFile)
                     } else {
                         mergeWalle.channelFile.eachLine { line ->
-                            def lineTrim = line.trim()
+                            String lineTrim = line.trim()
                             if (lineTrim.length() != 0 && !lineTrim.startsWith("#")) {
                                 def channelId = line.split("#").first().trim()
                                 if (channelId.length() != 0) {
-//                                    System.out.println("channel: ${channelId}")
                                     channels.add(['alias': channelId, 'channelId': channelId])
                                 }
                             }
                         }
                     }
 
-//                    System.out.println("channelIds: ${channelIds}")
                     channels.each { channel ->
                         nameVariantMap['channelId'] = channel.channelId
                         File storeDir = channelsDir
@@ -283,178 +287,20 @@ class WallePlugin implements Plugin<Project> {
                                 storeDir.mkdirs()
                             }
                         }
-                        def channelApkFile = new File(storeDir, new groovy.text.SimpleTemplateEngine().createTemplate(fileNameFormat).make(nameVariantMap).toString())
+                        File channelApkFile = new File(storeDir, new groovy.text.SimpleTemplateEngine().createTemplate(fileNameFormat).make(nameVariantMap).toString())
 
-                        def originalApkFile
+                        File originalApkFile
                         if (channel.channelId == mergeWalle.qihoo360?.channelId) {
-                            // 360加固
-                            System.out.println("--> jiagu")
-                            File jiaguJarFile = mergeWalle.qihoo360.jiaguJarFile
-                            if (jiaguJarFile == null) {
-                                jiaguJarFile = target.file('script/jiagu/jiagu.jar')
-                            }
-                            if (!jiaguJarFile.exists()) {
-                                jiaguJarFile.parentFile.parentFile.mkdirs()
-                                System.out.println('download jiagu/jiagu.jar')
-                                if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
-                                    File jiaguZipFile = target.file('script/qihoo360-jiagu.zip')
-                                    if (!jiaguZipFile.exists()) {
-                                        def downloadUrl = 'https://down.360safe.com/360Jiagu/360jiagubao_mac.zip'
-                                        target.exec {
-                                            commandLine 'bash', '-lc', "curl -o ${jiaguZipFile.path} $downloadUrl"
-                                        }
-                                    }
-                                    target.exec {
-                                        commandLine 'bash', '-lc', "unzip -o ${jiaguZipFile.path} 'jiagu/*' -d ${jiaguJarFile.parentFile.parentFile.path}"
-                                    }
-                                } else if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
-                                    File jiaguZipFile = target.file('script/qihoo360-jiagu.zip')
-                                    if (!jiaguZipFile.exists()) {
-                                        def downloadUrl = 'https://down.360safe.com/360Jiagu/360jiagubao_linux_64.zip'
-                                        target.exec {
-                                            commandLine 'bash', '-lc', "wget -O ${jiaguZipFile.path} $downloadUrl"
-                                        }
-                                    }
-                                    target.exec {
-                                        commandLine 'bash', '-lc', "unzip -o ${jiaguZipFile.path} -d ${jiaguJarFile.parentFile.parentFile.path}"
-                                    }
-                                }
-                                if (!jiaguJarFile.exists()) {
-                                    throw new IllegalStateException('下载 jiagu/jiagu.jar 失败')
-                                }
-                            }
-                            File jiaguDir = new File(outputDir, 'jiagu')
-                            jiaguDir.mkdirs()
-                            if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
-                                target.exec {
-                                    commandLine 'bash', '-lc', "java -jar ${jiaguJarFile.path} -login ${mergeWalle.qihoo360.account} ${mergeWalle.qihoo360.password}"
-                                }
-                                target.exec {
-                                    commandLine 'bash', '-lc', "java -jar ${jiaguJarFile.path} -jiagu ${targetApkFile.path} ${jiaguDir.path}"
-                                }
-                            } else if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
-                                target.exec {
-                                    commandLine 'bash', '-lc', "${jiaguJarFile.parentFile.path}/java/bin/java -jar ${jiaguJarFile.path} -login ${mergeWalle.qihoo360.account} ${mergeWalle.qihoo360.password}"
-                                }
-                                target.exec {
-                                    commandLine 'bash', '-lc', "${jiaguJarFile.parentFile.path}/java/bin/java -jar ${jiaguJarFile.path} -jiagu ${targetApkFile.path} ${jiaguDir.path}"
-                                }
-                            }
-                            File jiaguApk = jiaguDir.listFiles(new FilenameFilter() {
-                                @Override
-                                boolean accept(File dir, String name) {
-                                    return name.toLowerCase().endsWith('.apk')
-                                }
-                            }).first()
-                            File jiaguApkSigned = new File(jiaguDir.path, targetApkFile.name.replace('.apk', '_jiagu_signed.apk'))
-                            System.out.println("sign jiagu apk: ${jiaguApk.path}")
-                            signApk(target, variant, target.android.buildToolsVersion, jiaguApk, jiaguApkSigned)
-                            System.out.println("<-- jiagu")
-
-                            originalApkFile = jiaguApkSigned
+                            originalApkFile = qihoo360JiaguApk(target, variant, mergeWalle, apkFile, outputDir)
                         } else if (channel.channelId == mergeWalle.tencent?.channelId) {
-                            // 腾讯乐固
-                            System.out.println("--> legu")
-                            File leguJarFile = mergeWalle.tencent.leguJarFile
-                            if (leguJarFile == null) {
-                                leguJarFile = target.file('script/legu-all.jar')
-                            }
-                            if (!leguJarFile.exists()) {
-                                leguJarFile.parentFile.mkdirs()
-                                System.out.println('download legu-all.jar')
-                                def downloadUrl = 'https://github.com/rxreader/tencentcloud-legu/releases/download/3.0.60/legu-all.jar'
-                                if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
-                                    target.exec {
-                                        commandLine 'bash', '-lc', "curl -iL --max-redirs 5 -o ${leguJarFile.path} $downloadUrl"
-                                    }
-                                } else if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
-                                    target.exec {
-                                        commandLine 'bash', '-lc', "wget -O ${leguJarFile.path} $downloadUrl"
-                                    }
-                                }
-                                if (!leguJarFile.exists()) {
-                                    throw new IllegalStateException('下载 legu-all.jar 失败')
-                                }
-                            }
-                            File leguDir = new File(outputDir, 'legu')
-                            leguDir.mkdirs()
-                            target.exec {
-                                commandLine 'bash', '-lc', "java -jar ${leguJarFile.path} configure " +
-                                        "-secretId ${mergeWalle.tencent.secretId} " +
-                                        "-secretKey ${mergeWalle.tencent.secretKey} " +
-                                        "-region ${mergeWalle.tencent.region ?: 'ap-guangzhou'}"
-                            }
-                            target.exec {
-                                commandLine 'bash', '-lc', "java -jar ${leguJarFile.path} legu " +
-                                        "-in ${targetApkFile.path} " +
-                                        "-out ${leguDir.path}"
-                            }
-                            File leguApk = leguDir.listFiles(new FilenameFilter() {
-                                @Override
-                                boolean accept(File dir, String name) {
-                                    return name.toLowerCase().endsWith('.apk')
-                                }
-                            }).first()
-                            File leguApkSigned = new File(leguDir.path, targetApkFile.name.replace('.apk', '_legu_signed.apk'))
-                            System.out.println("sign legu apk: ${leguApk.path}")
-                            signApk(target, variant, target.android.buildToolsVersion, leguApk, leguApkSigned)
-                            System.out.println("<-- legu")
-
-                            originalApkFile = leguApkSigned
+                            originalApkFile = tencentLeguApk(target, variant, mergeWalle, apkFile, outputDir)
                         } else {
-                            originalApkFile = targetApkFile
+                            originalApkFile = apkFile
                         }
-
-                        // walle 写渠道
-                        def jarFile = mergeWalle.jarFile
-                        if (jarFile == null) {
-                            jarFile = target.file('script/walle-cli-all-1.1.7.jar')
-                        }
-                        if (!jarFile.exists()) {
-                            jarFile.parentFile.mkdirs()
-                            System.out.println('download walle-1.1.7.zip')
-                            def downloadUrl = 'https://codeload.github.com/Meituan-Dianping/walle/zip/v1.1.7'
-                            def walleZipFile = new File(jarFile.parentFile, "walle-1.1.7.zip")
-                            if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
-                                target.exec {
-                                    commandLine 'bash', '-lc', "curl -iL --max-redirs 5 -o ${walleZipFile.path} $downloadUrl"
-                                }
-                            } else if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
-                                target.exec {
-                                    commandLine 'bash', '-lc', "wget -O ${walleZipFile.path} $downloadUrl"
-                                }
-                            }
-                            if (!walleZipFile.exists()) {
-                                throw new IllegalStateException('下载 walle-1.1.7.zip 失败')
-                            }
-                            // 解压
-                            target.exec {
-                                commandLine 'bash', '-lc', "unzip -o ${walleZipFile.path} -d ${walleZipFile.parentFile.path}\n" +
-                                        "rm ${walleZipFile.path}"
-                            }
-                            def walleUnzipDir = new File(walleZipFile.parentFile, 'walle-1.1.7')
-                            // 编译
-                            target.exec {
-                                commandLine 'bash', '-lc', "cd ${walleUnzipDir.path}\n" +
-                                        "./gradlew :walle-cli:clean :walle-cli:shadowJar\n" +
-                                        "cp walle-cli/build/libs/walle-cli-all.jar ${jarFile.path}\n" +
-                                        "rm -rf ${walleUnzipDir.path}\n"
-                            }
-                            if (!jarFile.exists()) {
-                                throw new IllegalStateException("${jarFile.name} 编译失败")
-                            }
-                        }
-                        if (!mergeWalle.channelFile.exists()) {
-                            throw new IllegalStateException('walle channel file 不存在')
-                        }
-                        target.exec {
-                            commandLine 'bash', '-lc', "java -jar ${jarFile.path} put -c ${channel.channelId} ${originalApkFile.path} ${channelApkFile.path}"
-                        }
+                        walleApk(target, mergeWalle, channel, originalApkFile, channelApkFile)
                     }
 
-                    // webhook
-
-                    System.out.println('--- walle ---')
+                    println '--- walle ---'
                 }
             }
         }
@@ -470,14 +316,184 @@ class WallePlugin implements Plugin<Project> {
         return signingConfig.v2SigningEnabled
     }
 
-    void signApk(Project target, variant, String buildToolsVersion, File apkFile, File targetApkFile) {
-        target.exec {
-            commandLine 'bash', '-lc', "${target.android.sdkDirectory.path}/build-tools/${buildToolsVersion}/apksigner sign " +
-                    "-ks ${variant.signingConfig.storeFile.path} " +
-                    "-ks-pass pass:${variant.signingConfig.storePassword} " +
-                    "-ks-key-alias ${variant.signingConfig.keyAlias} " +
-                    "--key-pass pass:${variant.signingConfig.keyPassword} " +
-                    "--out ${targetApkFile.path} ${apkFile.path}"
+    File qihoo360JiaguApk(Project target, def variant, Walle walle, File apkFile, File outputDir) {
+        File jarFile = walle.qihoo360.jiaguJarFile
+        if (jarFile == null) {
+            jarFile = target.file('script/jiagu/jiagu.jar')
         }
+        if (!jarFile.exists()) {
+            jarFile.parentFile.parentFile.mkdirs()
+            File jiaguZipFile = null
+            String downloadUrl = null
+            if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
+                jiaguZipFile = new File(jarFile.parentFile.parentFile, 'qihoo360-jiagu-mac.zip')
+                downloadUrl = 'https://down.360safe.com/360Jiagu/360jiagubao_mac.zip'
+            } else if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
+                jiaguZipFile = new File(jarFile.parentFile.parentFile, 'qihoo360-jiagu-linux-64.zip')
+                downloadUrl = 'https://down.360safe.com/360Jiagu/360jiagubao_linux_64.zip'
+            } else if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+                jiaguZipFile = new File(jarFile.parentFile.parentFile, 'qihoo360-jiagu-windows-32.zip')
+                downloadUrl = 'https://down.360safe.com/360Jiagu/360jiagubao_windows_32.zip'
+            }
+            download(downloadUrl, jiaguZipFile)
+            unzip(jiaguZipFile, jiaguZipFile.parentFile)
+        }
+        if (!jarFile.exists()) {
+            throw new RuntimeException("下载 ${jarFile.parentFile.parentFile.toPath().relativize(jarFile.toPath()).toString().replace("\\", "/")} 失败")
+        }
+        File jiaguDir = new File(outputDir, 'jiagu')
+        jiaguDir.mkdirs()
+        if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
+            target.exec {
+                commandLine 'bash', '-lc', "java -jar ${jarFile.path} -login ${walle.qihoo360.account} ${walle.qihoo360.password}"
+            }
+            target.exec {
+                commandLine 'bash', '-lc', "java -jar ${jarFile.path} -jiagu ${apkFile.path} ${jiaguDir.path}"
+            }
+        } else if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
+            target.exec {
+                commandLine 'bash', '-lc', "${jarFile.parentFile.path}/java/bin/java -jar ${jarFile.path} -login ${walle.qihoo360.account} ${walle.qihoo360.password}"
+            }
+            target.exec {
+                commandLine 'bash', '-lc', "${jarFile.parentFile.path}/java/bin/java -jar ${jarFile.path} -jiagu ${apkFile.path} ${jiaguDir.path}"
+            }
+        } else if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+            target.exec {
+                commandLine 'cmd', '/c', "${jarFile.parentFile.path}\\java\\bin\\java -jar ${jarFile.path} -login ${walle.qihoo360.account} ${walle.qihoo360.password}"
+            }
+            target.exec {
+                commandLine 'cmd', '/c', "${jarFile.parentFile.path}\\java\\bin\\java -jar ${jarFile.path} -jiagu ${apkFile.path} ${jiaguDir.path}"
+            }
+        }
+        File jiaguApk = jiaguDir.listFiles(new FilenameFilter() {
+            @Override
+            boolean accept(File dir, String name) {
+                return name.toLowerCase().endsWith('.apk')
+            }
+        }).first()
+        File jiaguSignedApk = new File(jiaguDir.path, apkFile.name.replace('.apk', '_jiagu_signed.apk'))
+        signApk(target, variant, jiaguApk, jiaguSignedApk)
+        return jiaguSignedApk
+    }
+
+    File tencentLeguApk(Project target, def variant, Walle walle, File apkFile, File outputDir) {
+        File jarFile = walle.tencent.leguJarFile
+        if (jarFile == null) {
+            jarFile = target.file('script/legu-all.jar')
+        }
+        if (!jarFile.exists()) {
+            jarFile.parentFile.mkdirs()
+            def downloadUrl = 'https://github.com/rxreader/tencentcloud-legu/releases/download/3.0.60/legu-all.jar'
+            download(downloadUrl, jarFile)
+        }
+        if (!jarFile.exists()) {
+            throw new RuntimeException("下载 ${jarFile.name} 失败")
+        }
+        File leguDir = new File(outputDir, 'legu')
+        leguDir.mkdirs()
+        if (org.gradle.internal.os.OperatingSystem.current().isMacOsX() || org.gradle.internal.os.OperatingSystem.current().isLinux()) {
+            target.exec {
+                commandLine 'bash', '-lc', "java -jar ${jarFile.path} configure " +
+                        "-secretId ${walle.tencent.secretId} " +
+                        "-secretKey ${walle.tencent.secretKey} " +
+                        "-region ${walle.tencent.region ?: 'ap-guangzhou'}"
+            }
+            target.exec {
+                commandLine 'bash', '-lc', "java -jar ${jarFile.path} legu " +
+                        "-in ${apkFile.path} " +
+                        "-out ${leguDir.path}"
+            }
+        } else if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+            target.exec {
+                commandLine 'cmd', '/c', "java -jar ${jarFile.path} configure " +
+                        "-secretId ${walle.tencent.secretId} " +
+                        "-secretKey ${walle.tencent.secretKey} " +
+                        "-region ${walle.tencent.region ?: 'ap-guangzhou'}"
+            }
+            target.exec {
+                commandLine 'cmd', '/c', "java -jar ${jarFile.path} legu " +
+                        "-in ${apkFile.path} " +
+                        "-out ${leguDir.path}"
+            }
+        }
+        File leguApk = leguDir.listFiles(new FilenameFilter() {
+            @Override
+            boolean accept(File dir, String name) {
+                return name.toLowerCase().endsWith('.apk')
+            }
+        }).first()
+        File leguSignedApk = new File(leguDir.path, apkFile.name.replace('.apk', '_legu_signed.apk'))
+        signApk(target, variant, leguApk, leguSignedApk)
+        return leguSignedApk
+    }
+
+    void signApk(Project target, def variant, File apkFile, File signedApkFile) {
+        if (org.gradle.internal.os.OperatingSystem.current().isMacOsX() || org.gradle.internal.os.OperatingSystem.current().isLinux()) {
+            target.exec {
+                commandLine 'bash', '-lc', "${target.android.sdkDirectory.path}/build-tools/${target.android.buildToolsVersion}/apksigner sign " +
+                        "-ks ${variant.signingConfig.storeFile.path} " +
+                        "-ks-pass pass:${variant.signingConfig.storePassword} " +
+                        "-ks-key-alias ${variant.signingConfig.keyAlias} " +
+                        "--key-pass pass:${variant.signingConfig.keyPassword} " +
+                        "--out ${signedApkFile.path} ${apkFile.path}"
+            }
+        } else if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+            exec {
+                commandLine 'cmd', '/c', "${target.android.sdkDirectory.path}\\build-tools\\${target.android.buildToolsVersion}\\apksigner sign " +
+                        "-ks ${variant.signingConfig.storeFile.path} " +
+                        "-ks-pass pass:${variant.signingConfig.storePassword} " +
+                        "-ks-key-alias ${variant.signingConfig.keyAlias} " +
+                        "--key-pass pass:${variant.signingConfig.keyPassword} " +
+                        "--out ${signedApkFile.path} ${apkFile.path}"
+            }
+        }
+    }
+
+    void walleApk(Project target, Walle walle, def channel, File apkFile, File channelApkFile) {
+        File jarFile = walle.jarFile
+        if (jarFile == null) {
+            jarFile = target.file('script/walle-cli-all-1.1.7.jar')
+        }
+        if (!jarFile.exists()) {
+            jarFile.parentFile.mkdirs()
+            String downloadUrl = 'https://github.com/rxreader/walle/releases/download/v1.1.7/walle-cli-all-1.1.7.jar'
+            download(downloadUrl, jarFile)
+        }
+        if (!jarFile.exists()) {
+            throw new RuntimeException("下载 ${jarFile.name} 失败")
+        }
+        if (org.gradle.internal.os.OperatingSystem.current().isMacOsX() || org.gradle.internal.os.OperatingSystem.current().isLinux()) {
+            target.exec {
+                commandLine 'bash', '-lc', "java -jar ${jarFile.path} put -c ${channel.channelId} ${apkFile.path} ${channelApkFile.path}"
+            }
+        } else if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+            target.exec {
+                commandLine 'cmd', '/c', "java -jar ${jarFile.path} put -c ${channel.channelId} ${apkFile.path} ${channelApkFile.path}"
+            }
+        }
+    }
+
+    // ---
+    void download(String url, File file) {
+        file.withOutputStream { it << new URL(url).newInputStream() }
+    }
+
+    void unzip(File zipFile, File unzipDir) {
+        def zip = new java.util.zip.ZipFile(zipFile)
+        zip.entries().each{
+            if (!it.isDirectory() && it.size > 0){
+                def child = new File(unzipDir, it.name)
+                child.parentFile.mkdirs()
+                def zis = zip.getInputStream(it)
+                def fos = new FileOutputStream(child)
+                def buf = new byte[4 * 1024]
+                def len
+                while ((len = zis.read(buf)) != -1) {
+                    fos.write(buf, 0, len)
+                }
+                fos.close()
+            }
+        }
+        zip.close()
     }
 }
