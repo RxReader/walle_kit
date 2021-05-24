@@ -246,20 +246,6 @@ class WallePlugin implements Plugin<Project> {
                     ]
 
                     String fileNameFormat = mergeWalle.fileNameFormat ?: '${appName}-${buildType}-${channelId}.apk'
-                    File targetApkFile = new File(outputDir, new groovy.text.SimpleTemplateEngine().createTemplate(fileNameFormat).make(nameVariantMap).toString())// new File(outputDir, apkFile.name)
-
-                    // 复制
-                    if (org.gradle.internal.os.OperatingSystem.current().isMacOsX() || org.gradle.internal.os.OperatingSystem.current().isLinux()) {
-                        target.exec {
-                            commandLine 'bash', '-lc', "cp ${apkFile.path} ${targetApkFile.path}"
-                        }
-                    } else if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
-                        target.exec {
-                            commandLine 'cmd', '/c', "xcopy -f ${apkFile.path} ${targetApkFile.path}"
-                        }
-                    }
-
-                    println "target apk file: ${targetApkFile.path}"
 
                     // 读取渠道信息
                     def channels = []
@@ -289,15 +275,12 @@ class WallePlugin implements Plugin<Project> {
                         }
                         File channelApkFile = new File(storeDir, new groovy.text.SimpleTemplateEngine().createTemplate(fileNameFormat).make(nameVariantMap).toString())
 
-                        File originalApkFile
                         if (channel.channelId == mergeWalle.qihoo360?.channelId) {
-                            originalApkFile = qihoo360JiaguApk(target, variant, mergeWalle, apkFile, outputDir)
+                            apkFile = qihoo360JiaguApk(target, variant, mergeWalle, apkFile, outputDir)
                         } else if (channel.channelId == mergeWalle.tencent?.channelId) {
-                            originalApkFile = tencentLeguApk(target, variant, mergeWalle, apkFile, outputDir)
-                        } else {
-                            originalApkFile = apkFile
+                            apkFile = tencentLeguApk(target, variant, mergeWalle, apkFile, outputDir)
                         }
-                        walleApk(target, mergeWalle, channel, originalApkFile, channelApkFile)
+                        walleApk(target, mergeWalle, channel, apkFile, channelApkFile)
                     }
 
                     println '--- walle ---'
