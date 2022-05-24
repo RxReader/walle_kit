@@ -6,8 +6,12 @@ import 'package:walle_kit/walle_kit.dart';
 void main() => runApp(MyApp());
 
 class MyApp extends StatefulWidget {
+  const MyApp({
+    super.key,
+  });
+
   @override
-  _MyAppState createState() => _MyAppState();
+  State<StatefulWidget> createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
@@ -20,7 +24,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _initChannelId() async {
-    final String? channelId = await Walle.getChannelId();
+    final String? channelId = await Walle.instance.getChannelId();
 
     if (!mounted) {
       return;
