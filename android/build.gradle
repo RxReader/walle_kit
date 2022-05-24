@@ -1,14 +1,17 @@
 group 'io.github.v7lin.walle_kit'
-version '2.0.4'
+version '3.0.0'
 
 buildscript {
     repositories {
         google()
         mavenCentral()
+
+        // 阿里云jcenter镜像
+        maven { url 'https://maven.aliyun.com/repository/jcenter' }
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:4.1.0'
+        classpath 'com.android.tools.build:gradle:7.1.2'
     }
 }
 
@@ -16,23 +19,27 @@ rootProject.allprojects {
     repositories {
         google()
         mavenCentral()
+
+        // 阿里云jcenter镜像
+        maven { url 'https://maven.aliyun.com/repository/jcenter' }
     }
 }
 
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 31
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 
     defaultConfig {
         minSdkVersion 16
 
         // library 混淆 -> 随 library 引用，自动添加到 apk 打包混淆
         consumerProguardFiles 'consumer-rules.pro'
-    }
-
-    lintOptions {
-        disable 'InvalidPackage'
     }
 
     flavorDimensions 'vendor'

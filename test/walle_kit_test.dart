@@ -1,27 +1,45 @@
-import 'package:flutter/services.dart';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
-import 'package:walle_kit/walle_kit.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import 'package:walle_kit/src/model/channel_info.dart';
+import 'package:walle_kit/src/walle.dart';
+import 'package:walle_kit/src/walle_kit_method_channel.dart';
+import 'package:walle_kit/src/walle_kit_platform_interface.dart';
+
+class MockWalleKitPlatform
+    with MockPlatformInterfaceMixin
+    implements WalleKitPlatform {
+  @override
+  Future<String?> getChannelId() {
+    return Future<String?>.value('official');
+  }
+
+  @override
+  Future<ChannelInfo?> getChannelInfo() {
+    return Future<ChannelInfo?>.value(ChannelInfo(channel: 'official'));
+  }
+}
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  final WalleKitPlatform initialPlatform = WalleKitPlatform.instance;
 
-  const MethodChannel channel = MethodChannel('v7lin.github.io/walle_kit');
-
-  setUp(() {
-    channel.setMockMethodCallHandler((MethodCall call) async {
-      switch (call.method) {
-        case 'getChannelId':
-          return 'huawei';
-      }
-      throw PlatformException(code: '0', message: '想啥呢，升级插件不想升级Mock？');
-    });
-  });
-
-  tearDown(() {
-    channel.setMockMethodCallHandler(null);
+  test('$MethodChannelWalleKit is the default instance', () {
+    expect(initialPlatform, isInstanceOf<MethodChannelWalleKit>());
   });
 
   test('getChannelId', () async {
-    expect(await Walle.getChannelId(), 'huawei');
+    final MockWalleKitPlatform fakePlatform = MockWalleKitPlatform();
+    WalleKitPlatform.instance = fakePlatform;
+
+    expect(await Walle.instance.getChannelId(), 'official');
+  });
+
+  test('getChannelInfo', () async {
+    final MockWalleKitPlatform fakePlatform = MockWalleKitPlatform();
+    WalleKitPlatform.instance = fakePlatform;
+
+    final ChannelInfo? info = await Walle.instance.getChannelInfo();
+    expect(info?.channel, 'official');
   });
 }
