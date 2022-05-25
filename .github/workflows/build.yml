@@ -18,7 +18,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - name: Run ${{ github.repository_owner }}/install-ndk@shell
+      - name: Run android/install-ndk@shell
         run: |
           sudo echo "y" | sudo $ANDROID_HOME/tools/bin/sdkmanager "ndk;21.1.6352462"
       - run: flutter --version
@@ -43,7 +43,7 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - name: Run ${{ github.repository_owner }}/install-ndk@shell
+      - name: Run android/install-ndk@shell
         run: |
           sudo echo "y" | sudo $ANDROID_HOME/tools/bin/sdkmanager "ndk;21.1.6352462"
       - run: flutter --version
