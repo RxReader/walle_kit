@@ -25,7 +25,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 // walle
-apply from: "${rootProject.findProject(":walle_kit").projectDir}/walle_kit.gradle"
+apply from: "${project(":walle_kit").projectDir}/walle_kit.gradle"
 
 android {
     compileSdkVersion flutter.compileSdkVersion
@@ -57,7 +57,7 @@ android {
 
     walleConfigs {
         release {
-            enabled = org.gradle.internal.os.OperatingSystem.current().isMacOsX()
+            enabled = true
 
 //            // https://github.com/v7lin/walle-docker
 //            jarFile = file('script/walle-cli-all.jar') // 默认：file('script/walle-cli-all.jar')

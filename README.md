@@ -30,7 +30,7 @@ flutter版walle多渠道打包工具
 
 ```groovy
 // android/app/build.gradle
-apply from: "${rootProject.findProject(":walle_kit").projectDir}/walle_kit.gradle"
+apply from: "${project(":walle_kit").projectDir}/walle_kit.gradle"
 ```
 
 * fileNameFormat
