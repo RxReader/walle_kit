@@ -3,6 +3,7 @@ import 'package:json_annotation/json_annotation.dart';
 part 'channel_info.g.dart';
 
 @JsonSerializable(
+  explicitToJson: true,
   fieldRename: FieldRename.snake,
 )
 class ChannelInfo {
