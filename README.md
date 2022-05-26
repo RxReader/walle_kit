@@ -1,6 +1,5 @@
 # walle_kit
 
-[![GitHub Tag](https://img.shields.io/github/tag/rxreader/walle_kit.svg)](https://github.com/rxreader/walle_kit/releases)
 [![Pub Package](https://img.shields.io/pub/v/walle_kit.svg)](https://pub.dartlang.org/packages/walle_kit)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/rxreader/walle_kit/blob/master/LICENSE)
 
