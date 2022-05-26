@@ -1,3 +1,7 @@
+## 3.0.2
+
+* 支持 extraInfo
+
 ## 3.0.1
 
 * fix window copy file

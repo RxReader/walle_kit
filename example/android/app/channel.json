@@ -16,6 +16,9 @@
   {
     "alias": "小米",
     "channelId": "xiaomi",
+    "extraInfo": {
+      "secretKey": "12345678"
+    },
     "storeDir": "market"
   },
   {

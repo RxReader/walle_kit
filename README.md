@@ -46,6 +46,10 @@ apply from: "${project(":walle_kit").projectDir}/walle_kit.gradle"
 // channelId: 
 ```
 
+* channelFile
+  * [配置文件示例 - channel](example/android/app/channel)
+  * [配置文件示例 - channel.json](example/android/app/channel.json)
+
 * without flavors
 
 ```groovy
@@ -168,12 +172,6 @@ android {
 walle {
     enabled = false
 }
-```
-
-## iOS
-
-```
-# 不支持
 ```
 
 ## Flutter

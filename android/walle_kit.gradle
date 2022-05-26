@@ -454,13 +454,14 @@ class WallePlugin implements Plugin<Project> {
         if (!jarFile.exists()) {
             throw new RuntimeException("下载 ${jarFile.name} 失败")
         }
+        def extraInfo = channel.extraInfo?.entrySet()?.stream()?.map{ "${it.key}=${it.value}" }?.collect()?.toList()?.join(",")
         if (org.gradle.internal.os.OperatingSystem.current().isMacOsX() || org.gradle.internal.os.OperatingSystem.current().isLinux()) {
             target.exec {
-                commandLine 'bash', '-lc', "java -jar ${jarFile.path} put -c ${channel.channelId} ${apkFile.path} ${channelApkFile.path}"
+                commandLine 'bash', '-lc', "java -jar ${jarFile.path} put -c ${channel.channelId} ${extraInfo != null ? "-e $extraInfo" : ""} ${apkFile.path} ${channelApkFile.path}"
             }
         } else if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
             target.exec {
-                commandLine 'cmd', '/c', "java -jar ${jarFile.path} put -c ${channel.channelId} ${apkFile.path} ${channelApkFile.path}"
+                commandLine 'cmd', '/c', "java -jar ${jarFile.path} put -c ${channel.channelId} ${extraInfo != null ? "-e $extraInfo" : ""} ${apkFile.path} ${channelApkFile.path}"
             }
         }
     }
