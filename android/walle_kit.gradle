@@ -249,15 +249,7 @@ class WallePlugin implements Plugin<Project> {
                     File targetApkFile = new File(outputDir, new groovy.text.SimpleTemplateEngine().createTemplate(fileNameFormat).make(nameVariantMap).toString())// new File(outputDir, apkFile.name)
 
                     // 复制
-                    if (org.gradle.internal.os.OperatingSystem.current().isMacOsX() || org.gradle.internal.os.OperatingSystem.current().isLinux()) {
-                        target.exec {
-                            commandLine 'bash', '-lc', "cp ${apkFile.path} ${targetApkFile.path}"
-                        }
-                    } else if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
-                        target.exec {
-                            commandLine 'cmd', '/c', "xcopy -f ${apkFile.path} ${targetApkFile.path}"
-                        }
-                    }
+                    java.nio.file.Files.copy(apkFile.toPath(), targetApkFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
 
                     println "target apk file: ${targetApkFile.path}"
 

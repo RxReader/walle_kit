@@ -1,3 +1,7 @@
+## 3.0.1
+
+* fix window copy file
+
 ## 3.0.0
 
 * 升级Flutter 3.0
