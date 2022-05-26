@@ -1,7 +1,7 @@
 # walle_kit
 
 [![Pub Package](https://img.shields.io/pub/v/walle_kit.svg)](https://pub.dev/packages/walle_kit)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/RxReader/walle_kit/blob/master/LICENSE)
+[![License](https://img.shields.io/github/license/RxReader/walle_kit)](https://github.com/RxReader/walle_kit/blob/master/LICENSE)
 
 flutter版walle多渠道打包工具
 
