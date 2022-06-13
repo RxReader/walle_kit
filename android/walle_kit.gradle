@@ -282,9 +282,9 @@ class WallePlugin implements Plugin<Project> {
                         File channelApkFile = new File(storeDir, new groovy.text.SimpleTemplateEngine().createTemplate(fileNameFormat).make(nameVariantMap).toString())
 
                         File originalApkFile
-                        if (mergeWalle.qihoo360?.channels.contains(channel.channelId) ?: false) {
+                        if (mergeWalle.qihoo360?.channels?.contains(channel.channelId) ?: false) {
                             originalApkFile = qihoo360JiaguApk(target, variant, mergeWalle, apkFile, outputDir)
-                        } else if (mergeWalle.tencent?.channels.contains(channel.channelId) ?: false) {
+                        } else if (mergeWalle.tencent?.channels?.contains(channel.channelId) ?: false) {
                             originalApkFile = tencentLeguApk(target, variant, mergeWalle, apkFile, outputDir)
                         } else {
                             originalApkFile = apkFile
