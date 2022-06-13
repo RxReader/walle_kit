@@ -68,7 +68,7 @@ android {
 //
 //                account = 'xxx'
 //                password = 'xxx'
-//                channelId = 'qihu360'
+//                channels = ['qihu360', 'tencent']
 //            }
 
 //            tencent {
@@ -78,7 +78,7 @@ android {
 //                secretId = 'xxx'
 //                secretKey = 'xxx'
 ////                region = 'ap-guangzhou' // 可选：'ap-guangzhou'、'ap-shanghai'，默认：'ap-guangzhou'
-//                channelId = 'tencent'
+//                channels = ['qihu360', 'tencent']
 //            }
 
             outputDir = file("${project.buildDir}/outputs/apk/walle") // 默认：file("${project.buildDir}/outputs/apk/${flavorName}/${buildType}/walle")

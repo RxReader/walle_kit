@@ -21,7 +21,7 @@
 //
 //                account = 'xxx'
 //                password = 'xxx'
-//                channelId = 'qihu360'
+//                channels = ['qihu360', 'tencent']
 //            }
 //
 //            tencent {
@@ -31,7 +31,7 @@
 //                secretId = 'xxx'
 //                secretKey = 'xxx'
 ////                region = 'ap-guangzhou' // 可选：'ap-guangzhou'、'ap-shanghai'，默认：'ap-guangzhou'
-//                channelId = 'tencent'
+//                channels = ['qihu360', 'tencent']
 //            }
 //
 //            outputDir = file("${project.buildDir}/outputs/apk/${flavorName}/${buildType}/walle") // 默认：file("${project.buildDir}/outputs/apk/${flavorName}/${buildType}/walle")
@@ -68,7 +68,7 @@ class Qihoo360 {
     File jiaguJarFile
     String account
     String password
-    String channelId
+    List<String> channels
 
     void validate(String variant) {
         if (account == null || account.empty) {
@@ -77,7 +77,7 @@ class Qihoo360 {
         if (password == null || password.empty) {
             throw new RuntimeException("Qihoo360 password is empty for variant '$variant'")
         }
-        if (channelId == null || channelId.empty) {
+        if (channels == null || channels.empty) {
             throw new RuntimeException("Qihoo360 channelId is empty for variant '$variant'")
         }
     }
@@ -88,7 +88,7 @@ class Tencent {
     String secretId
     String secretKey
     String region
-    String channelId
+    List<String> channels
 
     void validate(String variant) {
         if (secretId == null || secretId.empty) {
@@ -97,7 +97,7 @@ class Tencent {
         if (secretKey == null || secretKey.empty) {
             throw new RuntimeException("Tencent secretKey is empty for variant '$variant'")
         }
-        if (channelId == null || channelId.empty) {
+        if (channels == null || channels.empty) {
             throw new RuntimeException("Tencent channelId is empty for variant '$variant'")
         }
     }
@@ -282,9 +282,9 @@ class WallePlugin implements Plugin<Project> {
                         File channelApkFile = new File(storeDir, new groovy.text.SimpleTemplateEngine().createTemplate(fileNameFormat).make(nameVariantMap).toString())
 
                         File originalApkFile
-                        if (channel.channelId == mergeWalle.qihoo360?.channelId) {
+                        if (mergeWalle.qihoo360?.channels.contains(channel.channelId) ?: false) {
                             originalApkFile = qihoo360JiaguApk(target, variant, mergeWalle, apkFile, outputDir)
-                        } else if (channel.channelId == mergeWalle.tencent?.channelId) {
+                        } else if (mergeWalle.tencent?.channels.contains(channel.channelId) ?: false) {
                             originalApkFile = tencentLeguApk(target, variant, mergeWalle, apkFile, outputDir)
                         } else {
                             originalApkFile = apkFile
@@ -335,6 +335,10 @@ class WallePlugin implements Plugin<Project> {
         }
         File jiaguDir = new File(outputDir, 'jiagu')
         jiaguDir.mkdirs()
+        File jiaguSignedApk = new File(jiaguDir.path, apkFile.name.replace('.apk', '_jiagu_signed.apk'))
+        if (jiaguSignedApk.exists()) {
+            return jiaguSignedApk
+        }
         if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
             target.exec {
                 commandLine 'bash', '-lc', "java -jar ${jarFile.path} -login ${walle.qihoo360.account} ${walle.qihoo360.password}"
@@ -363,7 +367,6 @@ class WallePlugin implements Plugin<Project> {
                 return name.toLowerCase().endsWith('.apk')
             }
         }).first()
-        File jiaguSignedApk = new File(jiaguDir.path, apkFile.name.replace('.apk', '_jiagu_signed.apk'))
         signApk(target, variant, jiaguApk, jiaguSignedApk)
         return jiaguSignedApk
     }
@@ -383,6 +386,10 @@ class WallePlugin implements Plugin<Project> {
         }
         File leguDir = new File(outputDir, 'legu')
         leguDir.mkdirs()
+        File leguSignedApk = new File(leguDir.path, apkFile.name.replace('.apk', '_legu_signed.apk'))
+        if (leguSignedApk.exists()) {
+            return leguSignedApk
+        }
         if (org.gradle.internal.os.OperatingSystem.current().isMacOsX() || org.gradle.internal.os.OperatingSystem.current().isLinux()) {
             target.exec {
                 commandLine 'bash', '-lc', "java -jar ${jarFile.path} configure " +
@@ -414,7 +421,6 @@ class WallePlugin implements Plugin<Project> {
                 return name.toLowerCase().endsWith('.apk')
             }
         }).first()
-        File leguSignedApk = new File(leguDir.path, apkFile.name.replace('.apk', '_legu_signed.apk'))
         signApk(target, variant, leguApk, leguSignedApk)
         return leguSignedApk
     }
