@@ -25,6 +25,8 @@ flutter版walle多渠道打包工具
 
 ## Android
 
+> ⚠️ 360让白嫖党使用CLI，可用腾讯乐固加固360渠道包
+
 * apply
 
 ```groovy
@@ -65,7 +67,7 @@ walle {
 
         account = 'xxx'
         password = 'xxx'
-        channelId = 'qihu360'
+        channels = ['qihu360', 'qihu360-alias']
     }
 
     tencent {
@@ -75,7 +77,7 @@ walle {
         secretId = 'xxx'
         secretKey = 'xxx'
 //        region = 'ap-guangzhou' // 可选：'ap-guangzhou'、'ap-shanghai'，默认：'ap-guangzhou'
-        channelId = 'tencent'
+        channels = ['tencent', 'tencent-alias']
     }
 
     outputDir = file("${project.buildDir}/outputs/apk/walle") // 默认：file("${project.buildDir}/outputs/apk/${flavorName}/${buildType}/walle")
@@ -100,7 +102,7 @@ android {
 
                 account = 'xxx'
                 password = 'xxx'
-                channelId = 'qihu360'
+                channels = ['qihu360', 'qihu360-alias']
             }
 
             tencent {
@@ -110,7 +112,7 @@ android {
                 secretId = 'xxx'
                 secretKey = 'xxx'
 //                region = 'ap-guangzhou' // 可选：'ap-guangzhou'、'ap-shanghai'，默认：'ap-guangzhou'
-                channelId = 'tencent'
+                channels = ['tencent', 'tencent-alias']
             }
 
             outputDir = file("${project.buildDir}/outputs/apk/walle") // 默认：file("${project.buildDir}/outputs/apk/${flavorName}/${buildType}/walle")
@@ -148,7 +150,7 @@ android {
 
                 account = 'xxx'
                 password = 'xxx'
-                channelId = 'qihu360'
+                channels = ['qihu360', 'qihu360-alias']
             }
 
             tencent {
@@ -158,7 +160,7 @@ android {
                 secretId = 'xxx'
                 secretKey = 'xxx'
 //                region = 'ap-guangzhou' // 可选：'ap-guangzhou'、'ap-shanghai'，默认：'ap-guangzhou'
-                channelId = 'tencent'
+                channels = ['tencent', 'tencent-alias']
             }
 
             outputDir = file("${project.buildDir}/outputs/apk/walle") // 默认：file("${project.buildDir}/outputs/apk/${flavorName}/${buildType}/walle")
