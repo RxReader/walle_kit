@@ -24,6 +24,8 @@
 //                channels = ['qihu360', 'qihu360-alias']
 //            }
 //
+//            // [访问管理](https://console.cloud.tencent.com/cam/capi)
+//            // [移动应用安全](https://console.cloud.tencent.com/ms/reinforce/list)
 //            tencent {
 ////                // https://github.com/rxreader/tencentcloud-legu
 ////                leguJarFile = file('script/legu-all.jar') // 默认：file('script/legu-all.jar')

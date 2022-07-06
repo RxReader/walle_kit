@@ -25,7 +25,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 // walle
-apply from: "${project(":walle_kit").projectDir}/walle_kit.gradle"
+apply from: "${project(":walle_kit").projectDir}/walle_kit_v2.gradle"
 
 android {
     compileSdkVersion flutter.compileSdkVersion
@@ -59,22 +59,9 @@ android {
         release {
             enabled = true
 
-//            // https://github.com/v7lin/walle-docker
-//            jarFile = file('script/walle-cli-all.jar') // 默认：file('script/walle-cli-all.jar')
-
-//            qihoo360 {
-////                // https://github.com/v7lin/qihoo360-jiagu-docker
-////                jiaguJarFile = file('script/jiagu/jiagu.jar') // 默认：file('script/jiagu/jiagu.jar')
-//
-//                account = 'xxx'
-//                password = 'xxx'
-//                channels = ['qihu360', 'qihu360-alias']
-//            }
-
+//            // [访问管理](https://console.cloud.tencent.com/cam/capi)
+//            // [移动应用安全](https://console.cloud.tencent.com/ms/reinforce/list)
 //            tencent {
-////                // https://github.com/v7lin/tencentcloud-legu
-////                leguJarFile = file('script/legu-all.jar') // 默认：file('script/legu-all.jar')
-//
 //                secretId = 'xxx'
 //                secretKey = 'xxx'
 ////                region = 'ap-guangzhou' // 可选：'ap-guangzhou'、'ap-shanghai'，默认：'ap-guangzhou'

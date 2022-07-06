@@ -31,7 +31,9 @@ flutter版walle多渠道打包工具
 
 ```groovy
 // android/app/build.gradle
-apply from: "${project(":walle_kit").projectDir}/walle_kit.gradle"
+apply from: "${project(":walle_kit").projectDir}/walle_kit_v2.gradle" // 推荐（非cli方式，不支持360加固）
+// 或
+apply from: "${project(":walle_kit").projectDir}/walle_kit.gradle" // 不推荐（cli方式，支持360加固）
 ```
 
 * fileNameFormat
@@ -50,6 +52,95 @@ apply from: "${project(":walle_kit").projectDir}/walle_kit.gradle"
 * channelFile
   * [配置文件示例 - channel](example/android/app/channel)
   * [配置文件示例 - channel.json](example/android/app/channel.json)
+
+### walle_kit_v2.gradle
+
+* without flavors
+
+```groovy
+// android/app/build.gradle
+walle {
+    enabled = true
+
+    // [访问管理](https://console.cloud.tencent.com/cam/capi)
+    // [移动应用安全](https://console.cloud.tencent.com/ms/reinforce/list)
+    tencent {
+        secretId = 'xxx'
+        secretKey = 'xxx'
+//        region = 'ap-guangzhou' // 可选：'ap-guangzhou'、'ap-shanghai'，默认：'ap-guangzhou'
+        channels = ['tencent', 'tencent-alias']
+    }
+
+    outputDir = file("${project.buildDir}/outputs/apk/walle") // 默认：file("${project.buildDir}/outputs/apk/${flavorName}/${buildType}/walle")
+    fileNameFormat = '${appName}-${buildType}-${channelId}.apk' // 默认：'${appName}-${buildType}-${channelId}.apk'
+    channelFile = file('channel')
+}
+```
+
+```groovy
+// android/app/build.gradle
+android {
+    walleConfigs {
+        release {
+            enabled = true
+
+            // [访问管理](https://console.cloud.tencent.com/cam/capi)
+            // [移动应用安全](https://console.cloud.tencent.com/ms/reinforce/list)
+            tencent {
+                secretId = 'xxx'
+                secretKey = 'xxx'
+//                region = 'ap-guangzhou' // 可选：'ap-guangzhou'、'ap-shanghai'，默认：'ap-guangzhou'
+                channels = ['tencent', 'tencent-alias']
+            }
+
+            outputDir = file("${project.buildDir}/outputs/apk/walle") // 默认：file("${project.buildDir}/outputs/apk/${flavorName}/${buildType}/walle")
+            fileNameFormat = '${appName}-${buildType}-${channelId}.apk' // 默认：'${appName}-${buildType}-${channelId}.apk'
+            channelFile = file('channel')
+        }
+    }
+}
+
+walle {
+    enabled = false
+}
+```
+
+* flavors
+
+```groovy
+// android/app/build.gradle
+android {
+    productFlavors {
+        prod {
+        }
+    }
+
+    walleConfigs {
+        prod {
+            enabled = true
+
+            // [访问管理](https://console.cloud.tencent.com/cam/capi)
+            // [移动应用安全](https://console.cloud.tencent.com/ms/reinforce/list)
+            tencent {
+                secretId = 'xxx'
+                secretKey = 'xxx'
+//                region = 'ap-guangzhou' // 可选：'ap-guangzhou'、'ap-shanghai'，默认：'ap-guangzhou'
+                channels = ['tencent', 'tencent-alias']
+            }
+
+            outputDir = file("${project.buildDir}/outputs/apk/walle") // 默认：file("${project.buildDir}/outputs/apk/${flavorName}/${buildType}/walle")
+            fileNameFormat = '${appName}-${buildType}-${channelId}.apk' // 默认：'${appName}-${buildType}-${channelId}.apk'
+            channelFile = file('channel')
+        }
+    }
+}
+
+walle {
+    enabled = false
+}
+```
+
+### walle_kit.gradle
 
 * without flavors
 
@@ -70,6 +161,8 @@ walle {
         channels = ['qihu360', 'qihu360-alias']
     }
 
+    // [访问管理](https://console.cloud.tencent.com/cam/capi)
+    // [移动应用安全](https://console.cloud.tencent.com/ms/reinforce/list)
     tencent {
 //        // https://github.com/rxreader/tencentcloud-legu
 //        leguJarFile = file('script/legu-all.jar') // 默认：file('script/legu-all.jar')
@@ -105,6 +198,8 @@ android {
                 channels = ['qihu360', 'qihu360-alias']
             }
 
+            // [访问管理](https://console.cloud.tencent.com/cam/capi)
+            // [移动应用安全](https://console.cloud.tencent.com/ms/reinforce/list)
             tencent {
 //                // https://github.com/rxreader/tencentcloud-legu
 //                leguJarFile = file('script/legu-all.jar') // 默认：file('script/legu-all.jar')
@@ -153,6 +248,8 @@ android {
                 channels = ['qihu360', 'qihu360-alias']
             }
 
+            // [访问管理](https://console.cloud.tencent.com/cam/capi)
+            // [移动应用安全](https://console.cloud.tencent.com/ms/reinforce/list)
             tencent {
 //                // https://github.com/rxreader/tencentcloud-legu
 //                leguJarFile = file('script/legu-all.jar') // 默认：file('script/legu-all.jar')

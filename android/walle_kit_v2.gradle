@@ -1,0 +1,394 @@
+//
+//使用方法
+//
+//apply from: 'walle.gradle'
+//
+//android {
+//    productFlavors {
+//        prod {...}
+//    }
+//
+//    walleConfigs {
+//        prod {
+//            enabled = true
+//
+//            // [访问管理](https://console.cloud.tencent.com/cam/capi)
+//            // [移动应用安全](https://console.cloud.tencent.com/ms/reinforce/list)
+//            tencent {
+//                secretId = 'xxx'
+//                secretKey = 'xxx'
+////                region = 'ap-guangzhou' // 可选：'ap-guangzhou'、'ap-shanghai'，默认：'ap-guangzhou'
+//                channels = ['tencent', 'qihu360']
+//            }
+//
+//            outputDir = file("${project.buildDir}/outputs/apk/${flavorName}/${buildType}/walle") // 默认：file("${project.buildDir}/outputs/apk/${flavorName}/${buildType}/walle")
+//            fileNameFormat = '${appName}-${buildType}-${channelId}.apk' // 默认：'${appName}-${buildType}-${channelId}.apk'
+////            channelType = 0 // 0：默认；1：json
+//            channelFile = file('channel')
+//        }
+//    }
+//}
+//
+//walle {
+//    enabled = false
+//}
+//
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+
+        // 阿里云jcenter镜像
+        maven { url 'https://maven.aliyun.com/repository/jcenter' }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.1.2'
+        classpath 'com.meituan.android.walle:payload_writer:1.1.7'
+        classpath 'com.tencentcloudapi:tencentcloud-sdk-java:3.0.60'
+        classpath 'com.qcloud:cos_api:5.5.1'
+    }
+}
+
+android {
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+class Tencent {
+    String secretId
+    String secretKey
+    String region
+    List<String> channels
+
+    void validate(String variant) {
+        if (secretId == null || secretId.empty) {
+            throw new RuntimeException("Tencent secretId is empty for variant '$variant'")
+        }
+        if (secretKey == null || secretKey.empty) {
+            throw new RuntimeException("Tencent secretKey is empty for variant '$variant'")
+        }
+        if (channels == null || channels.empty) {
+            throw new RuntimeException("Tencent channelId is empty for variant '$variant'")
+        }
+    }
+}
+
+class Walle {
+    final String name
+    Boolean enabled
+    Tencent tencent
+    File outputDir
+    String fileNameFormat
+    Integer channelType
+    File channelFile
+
+    Walle(String name = 'default') {
+        this.name = name
+    }
+
+    void tencent(Closure closure){
+        tencent = new Tencent()
+        closure.delegate = tencent
+        closure()
+    }
+
+    // ---
+
+    void validate() {
+        if (enabled == null || !enabled.booleanValue()) {
+            return
+        }
+        tencent?.validate(name)
+        if (channelType != null && channelType != 0 && channelType != 1) {
+            throw new RuntimeException("walle channel type is unsupported for variant '$name'")
+        }
+        if (channelFile == null) {
+            throw new RuntimeException("walle channel file is null for variant '$name'")
+        }
+    }
+
+    Walle mergeWith(Walle other) {
+        if (other == null) {
+            return this
+        }
+        Walle mergeWalle = new Walle(name == 'default' ? other.name : (other.name == 'default' ? name : "$name${other.name.capitalize()}"))
+        mergeWalle.enabled = other.enabled != null ? other.enabled : enabled
+        mergeWalle.tencent = other.tencent ?: tencent
+        mergeWalle.outputDir = other.outputDir ?: outputDir
+        mergeWalle.fileNameFormat = other.fileNameFormat ?: fileNameFormat
+        mergeWalle.channelType = other.channelType ?: channelType
+        mergeWalle.channelFile = other.channelFile ?: channelFile
+        return mergeWalle
+    }
+}
+
+apply plugin: WallePlugin
+
+class WallePlugin implements Plugin<Project> {
+
+    @Override
+    void apply(Project target) {
+        target.extensions.create('walle', Walle.class)
+        target.plugins.withId('com.android.application') {
+            Walle baseWalle = target.walle
+            def walleConfigs = target.container(Walle.class)
+            target.android.extensions.walleConfigs = walleConfigs
+            target.android.applicationVariants.whenObjectAdded { variant ->
+                Walle mergeWalle = null
+                List<Walle> flavorWalles = variant.productFlavors?.stream()?.map{flavor -> walleConfigs.findByName(flavor.name)}?.collect()?.toList() ?: Collections.emptyList()
+                Walle buildTypeWalle = walleConfigs.findByName(variant.buildType.name)
+                if (buildTypeWalle == null && (variant.buildType.name == 'debug' || variant.buildType.name == 'profile')) {
+                    buildTypeWalle = new Walle(variant.buildType.name)
+                    buildTypeWalle.enabled = false
+                }
+                // buildType > flavor > base
+                List<Walle> walles = []
+                walles.add(baseWalle)
+                walles.addAll(flavorWalles)
+                walles.add(buildTypeWalle)
+                for (Walle walle in walles) {
+                    if (mergeWalle == null) {
+                        mergeWalle = walle
+                    } else {
+                        mergeWalle = mergeWalle.mergeWith(walle)
+                    }
+                }
+
+                mergeWalle?.validate()
+
+                variant.assemble.doLast {
+                    walleWork(target, variant, mergeWalle)
+                }
+            }
+        }
+        target.afterEvaluate {
+            if (!target.plugins.hasPlugin('com.android.application')) {
+                target.logger.warn("The Android Gradle Plugin was not applied. Gradle Walle will not be configured.")
+            }
+        }
+    }
+
+    void walleWork(Project target, def variant, Walle walle) {
+        if (walle == null || walle.enabled == null || !walle.enabled.booleanValue()) {
+            target.logger.info("Gradle Walle is disabled for variant '${variant.name}'.")
+            return
+        }
+
+        if (!variant.signingReady && !variant.outputsAreSigned) {
+            target.logger.error("Signing not ready for Gradle Walle. Be sure to specify a signingConfig for variant '${variant.name}'.")
+            return
+        }
+
+        if (!org.gradle.internal.os.OperatingSystem.current().isMacOsX() && !org.gradle.internal.os.OperatingSystem.current().isLinux() && !org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+            target.logger.info("Gradle Walle 仅能运行于 MacOS/Linux/Windows，不能运行于 ${org.gradle.internal.os.OperatingSystem.current().osName}。")
+            return
+        }
+
+        println '--- walle ---'
+
+        File apkFile = variant.outputs.first().outputFile as File
+        println "apk file: ${apkFile.path}"
+
+        boolean v2SigningEnabled = v2SigningEnabled(variant)
+        println "v2SigningEnabled: ${v2SigningEnabled}"
+        if (!v2SigningEnabled) {
+            throw new RuntimeException("${apkFile.path} has no v2 signature in Apk Signing Block!")
+        }
+
+        // 预备输出目录
+        File outputDir = walle.outputDir
+        if (outputDir == null) {
+            outputDir = new File(apkFile.parentFile, 'walle')
+        }
+        File channelsDir = new File(outputDir, 'channels')
+        if (!channelsDir.exists()) {
+            channelsDir.mkdirs()
+        }
+
+        def nameVariantMap = [
+                'appName'    : target.name,
+                'projectName': target.rootProject.name,
+                'buildType'  : variant.buildType.name,
+                'versionName': variant.versionName,
+                'versionCode': variant.versionCode,
+                'packageName': variant.applicationId,
+                'flavorName' : variant.flavorName,
+                'channelId': 'channel'
+        ]
+
+        String fileNameFormat = walle.fileNameFormat ?: '${appName}-${buildType}-${channelId}.apk'
+        File targetApkFile = new File(outputDir, new groovy.text.SimpleTemplateEngine().createTemplate(fileNameFormat).make(nameVariantMap).toString())// new File(outputDir, apkFile.name)
+
+        // 复制
+        java.nio.file.Files.copy(apkFile.toPath(), targetApkFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+
+        println "target apk file: ${targetApkFile.path}"
+
+        // 读取渠道信息
+        def channels = []
+        if (walle.channelType == 1) {
+            def slurper = new groovy.json.JsonSlurper()
+            channels = slurper.parse(walle.channelFile)
+        } else {
+            walle.channelFile.eachLine { line ->
+                String lineTrim = line.trim()
+                if (lineTrim.length() != 0 && !lineTrim.startsWith("#")) {
+                    def channelId = line.split("#").first().trim()
+                    if (channelId.length() != 0) {
+                        channels.add(['alias': channelId, 'channelId': channelId])
+                    }
+                }
+            }
+        }
+
+        channels.each { channel ->
+            nameVariantMap['channelId'] = channel.channelId
+            File storeDir = channelsDir
+            if (channel.storeDir != null) {
+                storeDir = new File(storeDir, channel.storeDir)
+                if (!storeDir.exists()) {
+                    storeDir.mkdirs()
+                }
+            }
+            File channelApkFile = new File(storeDir, new groovy.text.SimpleTemplateEngine().createTemplate(fileNameFormat).make(nameVariantMap).toString())
+
+            File originalApkFile
+            if (walle.tencent?.channels?.contains(channel.channelId) ?: false) {
+                originalApkFile = tencentLeguApk(target, variant, walle.tencent, apkFile, outputDir)
+            } else {
+                originalApkFile = apkFile
+            }
+            writePayload(target, channel, originalApkFile, channelApkFile)
+        }
+
+
+        println '--- walle ---'
+    }
+
+    boolean v2SigningEnabled(variant) {
+        def signingConfig = variant.signingConfig
+        return signingConfig.v2SigningEnabled
+    }
+
+    File tencentLeguApk(Project target, def variant, Tencent tencent, File apkFile, File outputDir) {
+        File shieldDir = new File(outputDir, 'legu')
+        shieldDir.mkdirs()
+        File shieldApkFile = new File(shieldDir, apkFile.name.replace('.apk', '_legu.apk'))
+        File shieldSignedApkFile = new File(shieldDir, apkFile.name.replace('.apk', '_legu_signed.apk'))
+        if (shieldSignedApkFile.exists()) {
+            return shieldSignedApkFile
+        }
+        def msClient = new com.tencentcloudapi.ms.v20180408.MsClient(new com.tencentcloudapi.common.Credential(tencent.secretId, tencent.secretKey), tencent.region ?: 'ap-guangzhou')
+        // 上传文件到COS文件存储
+        println '上传APK到COS文件存储...'
+        def cosSecKeyResp = msClient.CreateCosSecKeyInstance(new com.tencentcloudapi.ms.v20180408.models.CreateCosSecKeyInstanceRequest())
+        def cosClient = new com.qcloud.cos.COSClient(new com.qcloud.cos.auth.BasicSessionCredentials(cosSecKeyResp.getCosId(), cosSecKeyResp.getCosKey(), cosSecKeyResp.getCosTocken()), new com.qcloud.cos.ClientConfig(new com.qcloud.cos.region.Region(cosSecKeyResp.getCosRegion())));
+        def bucket =  "${cosSecKeyResp.getCosBucket()}-${cosSecKeyResp.getCosAppid()}"
+        def fileKeyPrefix = cosSecKeyResp.getCosPrefix()
+        if (!fileKeyPrefix.isEmpty() && !fileKeyPrefix.endsWith("/")) {
+            fileKeyPrefix = fileKeyPrefix + "/"
+        }
+        fileKeyPrefix = fileKeyPrefix + variant.applicationId + "/" + variant.versionName
+        def fileMd5 = com.qcloud.cos.utils.Md5Utils.computeMD5Hash(apkFile)
+        def fileKey = fileKeyPrefix + "/" + com.qcloud.cos.utils.BinaryUtils.toHex(fileMd5) + "_" + apkFile.getName()
+        def fileMetadata
+        try {
+            fileMetadata = cosClient.getObjectMetadata(bucket, fileKey)
+        } catch(com.qcloud.cos.exception.CosServiceException e) {
+            if (e.getStatusCode() == java.net.HttpURLConnection.HTTP_NOT_FOUND) {
+                fileMetadata = null
+            } else {
+                throw e
+            }
+        }
+        if (fileMetadata == null) {
+            def fileReq = new com.qcloud.cos.model.PutObjectRequest(bucket, fileKey, apkFile)
+            fileMetadata = new com.qcloud.cos.model.ObjectMetadata()
+            fileMetadata.setContentMD5(com.qcloud.cos.utils.BinaryUtils.toBase64(fileMd5))
+            fileReq.setMetadata(fileMetadata)
+            cosClient.putObject(fileReq)
+        }
+        def urlReq = new com.qcloud.cos.model.GeneratePresignedUrlRequest(bucket, fileKey, com.qcloud.cos.http.HttpMethodName.GET)
+        urlReq.setExpiration(new Date(System.currentTimeMillis() + 1800000L))
+        urlReq.addRequestParameter("x-cos-security-token", cosSecKeyResp.getCosTocken())
+        def apkUrl = cosClient.generatePresignedUrl(urlReq)
+        // 加固
+        println '开始加固...'
+        def appInfo = new com.tencentcloudapi.ms.v20180408.models.AppInfo()
+        appInfo.setAppUrl(apkUrl.toString())
+        appInfo.setAppMd5(com.qcloud.cos.utils.BinaryUtils.toHex(fileMd5))
+        appInfo.setAppPkgName(variant.applicationId)
+        def serviceInfo = new com.tencentcloudapi.ms.v20180408.models.ServiceInfo()
+        serviceInfo.setServiceEdition("basic")
+        serviceInfo.setSubmitSource("legu-cli")
+        serviceInfo.setCallbackUrl("")
+        def shieldReq = new com.tencentcloudapi.ms.v20180408.models.CreateShieldInstanceRequest()
+        shieldReq.setAppInfo(appInfo)
+        shieldReq.setServiceInfo(serviceInfo)
+        def shieldResp = msClient.CreateShieldInstance(shieldReq)
+        def shieldApkUrl
+        if (shieldResp.getItemId() != null && !shieldResp.getItemId().isEmpty()) {
+            if (shieldResp.getProgress() == 2) {
+                // 处理中
+                println '加固中...'
+                Thread.sleep(5000L)
+            }
+            def resultReq = new com.tencentcloudapi.ms.v20180408.models.DescribeShieldResultRequest()
+            resultReq.setItemId(shieldResp.getItemId())
+            while(true) {
+                def resultResp = msClient.DescribeShieldResult(resultReq)
+                def status = resultResp.getTaskStatus()
+                if (status == 1) {
+                    println '加固完成...'
+                    def shieldInfo = resultResp.getShieldInfo()
+                    shieldApkUrl = shieldInfo.getAppUrl()
+                    break
+                } else if (status == 2) {
+                    println '加固中...'
+                    Thread.sleep(20000L)
+                } else if (status == 3) {
+                    throw new Exception(String.format("DescribeShieldResult[%s] %s, ShieldCode=%d\n 错误指引: %s", resultResp.getRequestId(), resultResp.getStatusDesc(), resultResp.getShieldInfo().getShieldCode(), resultResp.getStatusRef()))
+                } else {
+                    throw new Exception(String.format("DescribeShieldResult[%s] %s, taskStatus=%d\n 错误指引: %s", resultResp.getRequestId(), resultResp.getStatusDesc(), resultResp.getTaskStatus(), resultResp.getStatusRef()))
+                }
+            }
+        } else {
+            throw new Exception(String.format("CreateShieldInstance[%s] failed, item id is empty", shieldResp.getRequestId()))
+        }
+        println '下载加固包...'
+        shieldApkFile.withOutputStream { it << new URL(shieldApkUrl).newInputStream() }
+        println '加固包重签...'
+        signApk(target, variant, shieldApkFile, shieldSignedApkFile)
+        return shieldSignedApkFile
+    }
+
+    void signApk(Project target, def variant, File apkFile, File signedApkFile) {
+        if (org.gradle.internal.os.OperatingSystem.current().isMacOsX() || org.gradle.internal.os.OperatingSystem.current().isLinux()) {
+            target.exec {
+                commandLine 'bash', '-lc', "${target.android.sdkDirectory.path}/build-tools/${target.android.buildToolsVersion}/apksigner sign " +
+                        "-ks ${variant.signingConfig.storeFile.path} " +
+                        "-ks-pass pass:${variant.signingConfig.storePassword} " +
+                        "-ks-key-alias ${variant.signingConfig.keyAlias} " +
+                        "--key-pass pass:${variant.signingConfig.keyPassword} " +
+                        "--out ${signedApkFile.path} ${apkFile.path}"
+            }
+        } else if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+            exec {
+                commandLine 'cmd', '/c', "${target.android.sdkDirectory.path}\\build-tools\\${target.android.buildToolsVersion}\\apksigner sign " +
+                        "-ks ${variant.signingConfig.storeFile.path} " +
+                        "-ks-pass pass:${variant.signingConfig.storePassword} " +
+                        "-ks-key-alias ${variant.signingConfig.keyAlias} " +
+                        "--key-pass pass:${variant.signingConfig.keyPassword} " +
+                        "--out ${signedApkFile.path} ${apkFile.path}"
+            }
+        }
+    }
+
+    void writePayload(Project target, def channel, File apkFile, File channelApkFile) {
+        java.nio.file.Files.copy(apkFile.toPath(), channelApkFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        com.meituan.android.walle.ChannelWriter.put(channelApkFile, channel.channelId, channel.extraInfo)
+    }
+}
