@@ -71,7 +71,7 @@ class Tencent {
             throw new RuntimeException("Tencent secretKey is empty for variant '$variant'")
         }
         if (channels == null || channels.empty) {
-            throw new RuntimeException("Tencent channelId is empty for variant '$variant'")
+            throw new RuntimeException("Tencent channels is empty for variant '$variant'")
         }
     }
 }
