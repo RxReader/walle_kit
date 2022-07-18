@@ -257,9 +257,9 @@ class WallePlugin implements Plugin<Project> {
 
             File originalApkFile
             if (walle.tencent?.channels?.contains(channel.channelId) ?: false) {
-                originalApkFile = tencentLeguApk(target, variant, walle.tencent, apkFile, outputDir)
+                originalApkFile = tencentLeguApk(target, variant, walle.tencent, targetApkFile, outputDir)
             } else {
-                originalApkFile = apkFile
+                originalApkFile = targetApkFile
             }
             writePayload(target, channel, originalApkFile, channelApkFile)
         }
@@ -366,25 +366,22 @@ class WallePlugin implements Plugin<Project> {
     }
 
     void signApk(Project target, def variant, File apkFile, File signedApkFile) {
-        if (org.gradle.internal.os.OperatingSystem.current().isMacOsX() || org.gradle.internal.os.OperatingSystem.current().isLinux()) {
-            target.exec {
-                commandLine 'bash', '-lc', "${target.android.sdkDirectory.path}/build-tools/${target.android.buildToolsVersion}/apksigner sign " +
-                        "-ks ${variant.signingConfig.storeFile.path} " +
-                        "-ks-pass pass:${variant.signingConfig.storePassword} " +
-                        "-ks-key-alias ${variant.signingConfig.keyAlias} " +
-                        "--key-pass pass:${variant.signingConfig.keyPassword} " +
-                        "--out ${signedApkFile.path} ${apkFile.path}"
-            }
-        } else if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
-            exec {
-                commandLine 'cmd', '/c', "${target.android.sdkDirectory.path}\\build-tools\\${target.android.buildToolsVersion}\\apksigner sign " +
-                        "-ks ${variant.signingConfig.storeFile.path} " +
-                        "-ks-pass pass:${variant.signingConfig.storePassword} " +
-                        "-ks-key-alias ${variant.signingConfig.keyAlias} " +
-                        "--key-pass pass:${variant.signingConfig.keyPassword} " +
-                        "--out ${signedApkFile.path} ${apkFile.path}"
-            }
-        }
+        String storeType = variant.signingConfig.storeType
+        File storeFile = variant.signingConfig.storeFile
+        String storePassword = variant.signingConfig.storePassword
+        String keyAlias = variant.signingConfig.keyAlias
+        String keyPassword = variant.signingConfig.keyPassword
+
+        java.security.KeyStore store = java.security.KeyStore.getInstance(storeType != null ? storeType : java.security.KeyStore.getDefaultType())
+        store.load(new FileInputStream(storeFile), storePassword.toCharArray())
+
+        def signerConfig = new com.android.apksig.ApkSigner.SignerConfig.Builder(keyAlias, store.getKey(keyAlias, keyPassword.toCharArray()), Arrays.asList(store.getCertificateChain(keyAlias)))
+                        .build()
+        def apkSigner = new com.android.apksig.ApkSigner.Builder(Arrays.asList(signerConfig))
+                .setInputApk(apkFile)
+                .setOutputApk(signedApkFile)
+                .build()
+        apkSigner.sign()
     }
 
     void writePayload(Project target, def channel, File apkFile, File channelApkFile) {

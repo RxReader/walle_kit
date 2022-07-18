@@ -22,6 +22,7 @@ flutter版walle多渠道打包工具
 * [Meituan-Dianping/walle](https://github.com/Meituan-Dianping/walle)
 * [rxreader/qihoo360-jiagu-docker](https://github.com/rxreader/qihoo360-jiagu-docker)
 * [rxreader/tencentcloud-legu](https://github.com/rxreader/tencentcloud-legu)
+* [移动安全-应用加固命令行工具jar包使用说明](https://cloud.tencent.com/developer/article/1193406)
 
 ## Android
 

@@ -285,11 +285,11 @@ class WallePlugin implements Plugin<Project> {
 
                         File originalApkFile
                         if (mergeWalle.qihoo360?.channels?.contains(channel.channelId) ?: false) {
-                            originalApkFile = qihoo360JiaguApk(target, variant, mergeWalle, apkFile, outputDir)
+                            originalApkFile = qihoo360JiaguApk(target, variant, mergeWalle, targetApkFile, outputDir)
                         } else if (mergeWalle.tencent?.channels?.contains(channel.channelId) ?: false) {
-                            originalApkFile = tencentLeguApk(target, variant, mergeWalle, apkFile, outputDir)
+                            originalApkFile = tencentLeguApk(target, variant, mergeWalle, targetApkFile, outputDir)
                         } else {
-                            originalApkFile = apkFile
+                            originalApkFile = targetApkFile
                         }
                         walleApk(target, mergeWalle, channel, originalApkFile, channelApkFile)
                     }
