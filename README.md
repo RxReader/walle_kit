@@ -23,10 +23,12 @@ flutter版walle多渠道打包工具
 * [rxreader/qihoo360-jiagu-docker](https://github.com/rxreader/qihoo360-jiagu-docker)
 * [rxreader/tencentcloud-legu](https://github.com/rxreader/tencentcloud-legu)
 * [移动安全-应用加固命令行工具jar包使用说明](https://cloud.tencent.com/developer/article/1193406)
+* [腾讯云·访问管理](https://console.cloud.tencent.com/cam/capi)
+* [腾讯云·移动应用安全](https://console.cloud.tencent.com/ms/reinforce/list)
 
 ## Android
 
-> ⚠️ 360让白嫖党使用CLI，可用腾讯乐固加固360渠道包
+> ⚠️ 360不让白嫖党使用CLI，可用腾讯乐固加固360渠道包
 
 * apply
 

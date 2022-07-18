@@ -80,7 +80,7 @@ class Qihoo360 {
             throw new RuntimeException("Qihoo360 password is empty for variant '$variant'")
         }
         if (channels == null || channels.empty) {
-            throw new RuntimeException("Qihoo360 channelId is empty for variant '$variant'")
+            throw new RuntimeException("Qihoo360 channels is empty for variant '$variant'")
         }
     }
 }
@@ -100,7 +100,7 @@ class Tencent {
             throw new RuntimeException("Tencent secretKey is empty for variant '$variant'")
         }
         if (channels == null || channels.empty) {
-            throw new RuntimeException("Tencent channelId is empty for variant '$variant'")
+            throw new RuntimeException("Tencent channels is empty for variant '$variant'")
         }
     }
 }
