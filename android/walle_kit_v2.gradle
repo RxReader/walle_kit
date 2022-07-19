@@ -182,11 +182,6 @@ class WallePlugin implements Plugin<Project> {
             return
         }
 
-        if (!org.gradle.internal.os.OperatingSystem.current().isMacOsX() && !org.gradle.internal.os.OperatingSystem.current().isLinux() && !org.gradle.internal.os.OperatingSystem.current().isWindows()) {
-            target.logger.info("Gradle Walle 仅能运行于 MacOS/Linux/Windows，不能运行于 ${org.gradle.internal.os.OperatingSystem.current().osName}。")
-            return
-        }
-
         println '--- walle ---'
 
         File apkFile = variant.outputs.first().outputFile as File
