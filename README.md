@@ -29,7 +29,16 @@ flutter版walle多渠道打包工具
 
 ## Android
 
-> ⚠️ 360不让白嫖党使用CLI，可用腾讯乐固加固360渠道包
+> ⚠️ 360不让白嫖党使用CLI
+
+> ⚠️⚠️⚠️ 辣鸡加固服务，全特么翻车 ... 大家伙洗洗睡吧，360加固/腾讯乐固已死 ...
+```shell
+ Failure [-124: Failed parse during installPackageLI: Targeting R+ (version 30 and above) requires the resources.arsc of installed APKs to be stored uncompressed and aligned on a 4-byte boundary]
+```
+```shell
+# 解决方案 - 对 360 加固有效，对腾讯乐固无效（会报错）
+zipalign -p -f -v 4 input.apk output.apk
+```
 
 * apply
 
