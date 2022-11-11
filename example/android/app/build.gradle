@@ -25,7 +25,7 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 // walle
-apply from: "${project(":walle_kit").projectDir}/walle_kit_v2.gradle"
+apply from: "${project(":walle_kit").projectDir}/walle_kit_v3.gradle"
 
 android {
     compileSdkVersion flutter.compileSdkVersion
@@ -58,15 +58,6 @@ android {
     walleConfigs {
         release {
             enabled = true
-
-//            // [访问管理](https://console.cloud.tencent.com/cam/capi)
-//            // [移动应用安全](https://console.cloud.tencent.com/ms/reinforce/list)
-//            tencent {
-//                secretId = 'xxx'
-//                secretKey = 'xxx'
-////                region = 'ap-guangzhou' // 可选：'ap-guangzhou'、'ap-shanghai'，默认：'ap-guangzhou'
-//                channels = ['tencent', 'tencent-alias']
-//            }
 
             outputDir = file("${project.buildDir}/outputs/apk/walle") // 默认：file("${project.buildDir}/outputs/apk/${flavorName}/${buildType}/walle")
             fileNameFormat = '${appName}-${buildType}-${channelId}.apk' // 默认：'${appName}-${buildType}-${channelId}.apk'

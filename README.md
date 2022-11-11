@@ -44,9 +44,11 @@ zipalign -p -f -v 4 input.apk output.apk
 
 ```groovy
 // android/app/build.gradle
-apply from: "${project(":walle_kit").projectDir}/walle_kit_v2.gradle" // 推荐（非cli方式，不支持360加固）
+apply from: "${project(":walle_kit").projectDir}/walle_kit_v3.gradle" // 推荐（非cli方式，不支持360加固、不支持腾讯乐固）
 // 或
-apply from: "${project(":walle_kit").projectDir}/walle_kit.gradle" // 不推荐（cli方式，支持360加固）
+apply from: "${project(":walle_kit").projectDir}/walle_kit_v2.gradle" // 推荐（非cli方式，不支持360加固、支持腾讯乐固）
+// 或
+apply from: "${project(":walle_kit").projectDir}/walle_kit.gradle" // 不推荐（cli方式，支持360加固、支持腾讯乐固）
 ```
 
 * fileNameFormat
@@ -65,6 +67,11 @@ apply from: "${project(":walle_kit").projectDir}/walle_kit.gradle" // 不推荐�
 * channelFile
   * [配置文件示例 - channel](example/android/app/channel)
   * [配置文件示例 - channel.json](example/android/app/channel.json)
+
+### walle_kit_v3.gradle
+
+> 应用宝上架，已不再强制要求加固
+> 用法同 walle_kit_v2.gradle 一致，不同的是已不再支持腾讯乐固功能
 
 ### walle_kit_v2.gradle
 

@@ -37,6 +37,11 @@
     "storeDir": "market"
   },
   {
+    "alias": "荣耀",
+    "channelId": "honor",
+    "storeDir": "market"
+  },
+  {
     "alias": "Oppo",
     "channelId": "oppo",
     "storeDir": "market"
