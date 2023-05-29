@@ -21,7 +21,7 @@ jobs:
           channel: 'stable'
       - run: flutter --version
       - run: flutter pub get
-      - run: flutter format --dry-run --set-exit-if-changed .
+      - run: dart format --set-exit-if-changed .
       - run: flutter pub publish --dry-run
       - run: flutter analyze lib example/lib
       - run: cd example; flutter build apk --debug
@@ -44,7 +44,7 @@ jobs:
           channel: 'stable'
       - run: flutter --version
       - run: flutter pub get
-      - run: flutter format --dry-run --set-exit-if-changed .
+      - run: dart format --set-exit-if-changed .
       - run: flutter pub publish --dry-run
       - run: flutter analyze lib example/lib
       - run: cd example; flutter build apk
